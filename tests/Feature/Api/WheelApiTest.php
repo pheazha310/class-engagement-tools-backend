@@ -207,3 +207,122 @@ test('teacher can delete their wheel', function () {
     $response->assertNoContent();
     expect(Wheel::find($wheel->id))->toBeNull();
 });
+
+test('teacher can spin wheel with participants array', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/wheel/spin', [
+            'participants' => [
+                ['id' => 1, 'name' => 'Alice'],
+                ['id' => 2, 'name' => 'Bob'],
+            ],
+        ]);
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'participant' => [
+                'id',
+                'name',
+            ],
+        ]);
+
+    $name = $response->json('participant.name');
+    expect(in_array($name, ['Alice', 'Bob']))->toBeTrue();
+});
+
+test('teacher can spin wheel tied to a wheel', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create(['removal_mode' => false]);
+    $wheel->participants()->createMany([
+        ['name' => 'Alice'],
+        ['name' => 'Bob'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/wheel/spin', [
+            'participants' => [
+                ['id' => 1, 'name' => 'Alice'],
+                ['id' => 2, 'name' => 'Bob'],
+            ],
+            'wheel_id' => $wheel->id,
+        ]);
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'participant',
+            'history',
+        ]);
+
+    $name = $response->json('participant.name');
+    expect(in_array($name, ['Alice', 'Bob']))->toBeTrue();
+
+    expect($wheel->participants()->count())->toBe(2);
+    expect($wheel->spinHistories()->count())->toBe(1);
+});
+
+test('spin removes participant when removal mode is enabled', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create(['removal_mode' => true]);
+    $wheel->participants()->createMany([
+        ['name' => 'Alice'],
+        ['name' => 'Bob'],
+    ]);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/wheel/spin', [
+            'participants' => [
+                ['id' => 1, 'name' => 'Alice'],
+                ['id' => 2, 'name' => 'Bob'],
+            ],
+            'wheel_id' => $wheel->id,
+            'removal_mode' => true,
+        ]);
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'participant',
+            'history',
+        ]);
+
+    $name = $response->json('participant.name');
+    expect(in_array($name, ['Alice', 'Bob']))->toBeTrue();
+
+    $history = $wheel->spinHistories()->first();
+    expect($history->participant_name)->toBe($name);
+
+    $wheel->refresh();
+    expect($wheel->participants()->count())->toBe(1);
+    expect($wheel->participants()->where('name', $name)->exists())->toBeFalse();
+});
+
+test('spin returns 404 when participants list is empty', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/wheel/spin', []);
+
+    $response->assertStatus(404)
+        ->assertJson(['message' => 'No participants available to spin']);
+});
+
+test('spin returns 404 when wheel has no participants', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson('/api/wheel/spin', [
+            'participants' => [
+                ['id' => 1, 'name' => 'Ghost'],
+            ],
+            'wheel_id' => $wheel->id,
+        ]);
+
+    $response->assertStatus(404)
+        ->assertJson(['message' => 'No participants available to spin']);
+});

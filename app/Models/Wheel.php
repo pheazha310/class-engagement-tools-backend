@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'description', 'color'])]
+#[Fillable(['name', 'description', 'color', 'removal_mode'])]
 class Wheel extends Model
 {
     /** @use HasFactory<WheelFactory> */
@@ -46,5 +46,10 @@ class Wheel extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(Participant::class);
+    }
+
+    public function spinHistories(): HasMany
+    {
+        return $this->hasMany(SpinHistory::class);
     }
 }

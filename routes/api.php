@@ -11,4 +11,5 @@ Route::middleware('auth')->group(function () {
     Route::delete('/wheels/{wheel}', [WheelController::class, 'destroy']);
     Route::post('/wheels/{wheel}/participants', [WheelController::class, 'storeParticipant']);
     Route::delete('/wheels/{wheel}/participants/{participant}', [WheelController::class, 'destroyParticipant']);
+    Route::post('/wheel/spin', [WheelController::class, 'spin']);
 });

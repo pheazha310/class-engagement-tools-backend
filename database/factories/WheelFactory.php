@@ -20,6 +20,7 @@ class WheelFactory extends Factory
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'color' => fake()->hexColor(),
+            'removal_mode' => fake()->boolean(20),
         ];
     }
 }
