@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\WheelController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/wheels/{wheel}/share-token', [WheelController::class, 'generateShareToken']);
+Route::get('/wheels/shared/{shareToken}', [WheelController::class, 'showShared'])->name('wheels.shared');
+
 Route::middleware('auth')->group(function () {
     Route::get('/wheels', [WheelController::class, 'index']);
     Route::post('/wheels', [WheelController::class, 'store']);

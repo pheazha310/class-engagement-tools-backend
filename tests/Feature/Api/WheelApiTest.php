@@ -326,3 +326,111 @@ test('spin returns 404 when wheel has no participants', function () {
     $response->assertStatus(404)
         ->assertJson(['message' => 'No participants available to spin']);
 });
+
+test('teacher can generate a share token for their wheel', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/share-token");
+
+    $response->assertCreated()
+        ->assertJsonStructure([
+            'share_token',
+            'shared_url',
+        ]);
+
+    $token = $response->json('share_token');
+    expect(strlen($token))->toBe(64);
+
+    $wheel->refresh();
+    expect($wheel->share_token)->not->toBeNull();
+});
+
+test('unauthorized user cannot generate share token for another users wheel', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $wheel = Wheel::factory()->for($owner)->create();
+
+    $this->actingAs($other)
+        ->postJson("/api/wheels/{$wheel->id}/share-token")
+        ->assertStatus(403);
+});
+
+test('unauthenticated user cannot generate share token', function () {
+    $wheel = Wheel::factory()->create();
+
+    $this->postJson("/api/wheels/{$wheel->id}/share-token")
+        ->assertStatus(403);
+});
+
+test('public user can view shared wheel with valid token', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+    $wheel->participants()->createMany([
+        ['name' => 'Alice'],
+        ['name' => 'Bob'],
+    ]);
+
+    $token = $wheel->generateShareToken();
+
+    $response = $this->getJson("/api/wheels/shared/{$token}");
+
+    $response->assertOk()
+        ->assertJson([
+            'id' => $wheel->id,
+            'name' => $wheel->name,
+            'participants' => [
+                ['name' => 'Alice'],
+                ['name' => 'Bob'],
+            ],
+        ]);
+});
+
+test('shared wheel endpoint returns 404 for invalid token', function () {
+    $this->getJson('/api/wheels/shared/invalid-token-12345')
+        ->assertStatus(404)
+        ->assertJson(['message' => 'Shared wheel not found']);
+});
+
+test('public user cannot modify wheel via shared endpoint', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+    $token = $wheel->generateShareToken();
+
+    $this->putJson("/api/wheels/shared/{$token}", ['name' => 'Hacked'])
+        ->assertStatus(405);
+
+    $this->deleteJson("/api/wheels/shared/{$token}")
+        ->assertStatus(405);
+});
+
+test('public user cannot add participant to shared wheel', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+    $token = $wheel->generateShareToken();
+
+    $this->postJson("/api/wheels/shared/{$token}/participants", ['name' => 'Eve'])
+        ->assertStatus(404);
+});
+
+test('share token is unique across wheels', function () {
+    $user = User::factory()->create();
+    $wheel1 = Wheel::factory()->for($user)->create();
+    $wheel2 = Wheel::factory()->for($user)->create();
+
+    $token1 = $wheel1->generateShareToken();
+
+    $token2 = $wheel2->generateShareToken();
+
+    expect($token1)->not->toBe($token2);
+
+    $this->getJson("/api/wheels/shared/{$token1}")
+        ->assertOk()
+        ->assertJson(['id' => $wheel1->id]);
+
+    $this->getJson("/api/wheels/shared/{$token2}")
+        ->assertOk()
+        ->assertJson(['id' => $wheel2->id]);
+});

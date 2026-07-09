@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'description', 'color', 'removal_mode'])]
+#[Fillable(['name', 'description', 'color', 'removal_mode', 'share_token'])]
 class Wheel extends Model
 {
     /** @use HasFactory<WheelFactory> */
@@ -51,5 +51,21 @@ class Wheel extends Model
     public function spinHistories(): HasMany
     {
         return $this->hasMany(SpinHistory::class);
+    }
+
+    public function generateShareToken(): string
+    {
+        $plaintext = bin2hex(random_bytes(32));
+
+        $this->forceFill([
+            'share_token' => hash('sha256', $plaintext),
+        ])->save();
+
+        return $plaintext;
+    }
+
+    public static function findByShareToken(string $token): ?self
+    {
+        return static::where('share_token', hash('sha256', $token))->first();
     }
 }

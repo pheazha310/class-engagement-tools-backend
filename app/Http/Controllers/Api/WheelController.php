@@ -28,6 +28,29 @@ class WheelController extends Controller
         return response()->json($wheel->load('participants'), Response::HTTP_CREATED);
     }
 
+    public function generateShareToken(Request $request, Wheel $wheel): JsonResponse
+    {
+        Gate::authorize('update', $wheel);
+
+        $plaintext = $wheel->generateShareToken();
+
+        return response()->json([
+            'share_token' => $plaintext,
+            'shared_url' => url("/api/wheels/shared/{$plaintext}"),
+        ], Response::HTTP_CREATED);
+    }
+
+    public function showShared(string $shareToken): JsonResponse
+    {
+        $wheel = Wheel::findByShareToken($shareToken);
+
+        if (! $wheel) {
+            abort(Response::HTTP_NOT_FOUND, 'Shared wheel not found');
+        }
+
+        return response()->json($wheel->load('participants'), Response::HTTP_OK);
+    }
+
     public function show(Wheel $wheel): JsonResponse
     {
         Gate::authorize('view', $wheel);
