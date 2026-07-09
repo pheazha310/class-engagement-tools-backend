@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
-import { Shield, Mail, Lock } from '@lucide/vue';
+import { Shield, Mail, Lock, Eye, EyeOff } from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,6 +18,8 @@ defineOptions({
         description: 'Secure Institutional Gateway',
     },
 });
+
+const showPassword = ref(false);
 
 defineProps<{
     status?: string;
@@ -67,7 +69,7 @@ defineProps<{
                             autofocus
                             :tabindex="1"
                             autocomplete="email"
-                            placeholder="name@company.com"
+                            placeholder="admin@example.com"
                             class="pl-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                         />
                     </div>
@@ -91,15 +93,25 @@ defineProps<{
                     </div>
                     <div class="relative">
                         <Lock class="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
-                        <PasswordInput
+                        <Input
                             id="password"
+                            :type="showPassword ? 'text' : 'password'"
                             name="password"
                             required
                             :tabindex="2"
                             autocomplete="current-password"
                             placeholder="••••••••"
-                            class="pl-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                            class="pl-10 pr-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                         />
+                        <button
+                            type="button"
+                            @click="showPassword = !showPassword"
+                            class="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
+                            :tabindex="-1"
+                        >
+                            <EyeOff v-if="showPassword" class="h-5 w-5" />
+                            <Eye v-else class="h-5 w-5" />
+                        </button>
                     </div>
                     <InputError :message="errors.password" />
                 </div>
