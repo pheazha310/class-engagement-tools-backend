@@ -15,12 +15,25 @@ class SchoolRepository implements SchoolRepositoryInterface
             ->get();
     }
 
-    public function searchByName(string $query, ?int $districtId = null): Collection
+    public function getByProvince(int $provinceId): Collection
+    {
+        return School::whereHas('district', function ($query) use ($provinceId) {
+            $query->where('province_id', $provinceId);
+        })->orderBy('name')->get();
+    }
+
+    public function searchByName(string $query, ?int $districtId = null, ?int $provinceId = null): Collection
     {
         $q = School::where('name', 'like', "%{$query}%");
 
         if ($districtId !== null) {
             $q->where('district_id', $districtId);
+        }
+
+        if ($provinceId !== null) {
+            $q->whereHas('district', function ($query) use ($provinceId) {
+                $query->where('province_id', $provinceId);
+            });
         }
 
         return $q->orderBy('name')->get();

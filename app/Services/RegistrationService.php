@@ -23,7 +23,6 @@ class RegistrationService
                 'user_id' => $user->id,
                 'country_id' => $data['country_id'] ?? null,
                 'province_id' => $data['province_id'] ?? null,
-                'district_id' => $data['district_id'] ?? null,
                 'school_id' => $data['school_id'] ?? null,
             ]);
 

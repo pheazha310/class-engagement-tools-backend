@@ -19,9 +19,14 @@ class SchoolService
         return $this->schools->getByDistrict($districtId);
     }
 
-    public function search(string $query, ?int $districtId = null): Collection
+    public function getByProvince(int $provinceId): Collection
     {
-        return $this->schools->searchByName($query, $districtId);
+        return $this->schools->getByProvince($provinceId);
+    }
+
+    public function search(string $query, ?int $districtId = null, ?int $provinceId = null): Collection
+    {
+        return $this->schools->searchByName($query, $districtId, $provinceId);
     }
 
     public function requestNewSchool(array $data): School

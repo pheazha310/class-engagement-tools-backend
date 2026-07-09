@@ -16,12 +16,19 @@ class SchoolController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'district_id' => 'required|exists:districts,id',
+            'province_id' => 'required_without:district_id|exists:provinces,id',
+            'district_id' => 'required_without:province_id|exists:districts,id',
             'search' => 'nullable|string|max:255',
         ]);
 
         if ($request->filled('search')) {
-            $schools = $this->schoolService->search($request->input('search'), (int) $request->input('district_id'));
+            $schools = $this->schoolService->search(
+                $request->input('search'),
+                $request->integer('district_id') ?: null,
+                $request->integer('province_id') ?: null,
+            );
+        } elseif ($request->filled('province_id')) {
+            $schools = $this->schoolService->getByProvince((int) $request->input('province_id'));
         } else {
             $schools = $this->schoolService->getByDistrict((int) $request->input('district_id'));
         }

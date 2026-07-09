@@ -12,7 +12,10 @@ class LocationSeeder extends Seeder
 {
     public function run(): void
     {
-        $country = Country::create(['name' => 'Cambodia', 'code' => 'KH']);
+        $country = Country::firstOrCreate(
+            ['code' => 'KH'],
+            ['name' => 'Cambodia'],
+        );
 
         $provinces = [
             'Banteay Meanchey',
@@ -43,7 +46,7 @@ class LocationSeeder extends Seeder
         ];
 
         foreach ($provinces as $index => $provinceName) {
-            $province = Province::create([
+            $province = Province::firstOrCreate([
                 'country_id' => $country->id,
                 'name' => $provinceName,
             ]);
@@ -51,26 +54,28 @@ class LocationSeeder extends Seeder
             $districtCount = rand(3, 6);
 
             for ($d = 1; $d <= $districtCount; $d++) {
-                $district = District::create([
+                $district = District::firstOrCreate([
                     'province_id' => $province->id,
                     'name' => "{$provinceName} District {$d}",
                 ]);
 
-                School::create([
-                    'district_id' => $district->id,
-                    'name' => "{$provinceName} High School {$d}",
-                    'address' => "Main Street, {$provinceName} District {$d}",
-                    'latitude' => 11.565 + ($index * 0.05) + ($d * 0.01),
-                    'longitude' => 104.912 + ($index * 0.03) + ($d * 0.01),
-                ]);
+                School::firstOrCreate(
+                    ['district_id' => $district->id, 'name' => "{$provinceName} High School {$d}"],
+                    [
+                        'address' => "Main Street, {$provinceName} District {$d}",
+                        'latitude' => 11.565 + ($index * 0.05) + ($d * 0.01),
+                        'longitude' => 104.912 + ($index * 0.03) + ($d * 0.01),
+                    ],
+                );
 
-                School::create([
-                    'district_id' => $district->id,
-                    'name' => "{$provinceName} Secondary School {$d}",
-                    'address' => "Second Avenue, {$provinceName} District {$d}",
-                    'latitude' => 11.575 + ($index * 0.05) + ($d * 0.01),
-                    'longitude' => 104.922 + ($index * 0.03) + ($d * 0.01),
-                ]);
+                School::firstOrCreate(
+                    ['district_id' => $district->id, 'name' => "{$provinceName} Secondary School {$d}"],
+                    [
+                        'address' => "Second Avenue, {$provinceName} District {$d}",
+                        'latitude' => 11.575 + ($index * 0.05) + ($d * 0.01),
+                        'longitude' => 104.922 + ($index * 0.03) + ($d * 0.01),
+                    ],
+                );
             }
         }
     }

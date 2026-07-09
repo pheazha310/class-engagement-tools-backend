@@ -23,3 +23,12 @@ export type AdminRoleListItem = {
     permissions: string[];
     is_protected: boolean;
 };
+
+export type AdminLocationListItem = {
+    id: number;
+    country: string;
+    province: string;
+    school_name: string;
+    created_at: string | null;
+    updated_at: string | null;
+};
