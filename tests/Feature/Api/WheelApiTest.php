@@ -3,6 +3,7 @@
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\User;
 use App\Models\Wheel;
+use Illuminate\Http\UploadedFile;
 
 beforeEach(function () {
     $this->withoutMiddleware(VerifyCsrfToken::class);
@@ -433,4 +434,202 @@ test('share token is unique across wheels', function () {
     $this->getJson("/api/wheels/shared/{$token2}")
         ->assertOk()
         ->assertJson(['id' => $wheel2->id]);
+});
+
+test('teacher can import participants from csv file', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $csv = "Alice,Bob,Charlie\nDiana,Eve";
+
+    $file = tempnam(sys_get_temp_dir(), 'csv').'.csv';
+    file_put_contents($file, $csv);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.csv',
+                'text/csv',
+                null,
+                true
+            ),
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonCount(5, 'imported');
+
+    expect($wheel->participants()->count())->toBe(5);
+
+    unlink($file);
+});
+
+test('teacher can import participants from txt file', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $txt = "Alice\nBob\nCharlie";
+
+    $file = tempnam(sys_get_temp_dir(), 'txt').'.txt';
+    file_put_contents($file, $txt);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.txt',
+                'text/plain',
+                null,
+                true
+            ),
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonCount(3, 'imported');
+
+    expect($wheel->participants()->count())->toBe(3);
+
+    unlink($file);
+});
+
+test('import removes empty values', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $txt = "Alice\n\nBob\n  \nCharlie\n";
+
+    $file = tempnam(sys_get_temp_dir(), 'txt').'.txt';
+    file_put_contents($file, $txt);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.txt',
+                'text/plain',
+                null,
+                true
+            ),
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonCount(3, 'imported');
+
+    expect($wheel->participants()->count())->toBe(3);
+
+    unlink($file);
+});
+
+test('import handles duplicate names within file', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $txt = "Alice\nBob\nAlice\nCharlie\nBob";
+
+    $file = tempnam(sys_get_temp_dir(), 'txt').'.txt';
+    file_put_contents($file, $txt);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.txt',
+                'text/plain',
+                null,
+                true
+            ),
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonCount(3, 'imported');
+
+    expect($wheel->participants()->count())->toBe(3);
+
+    unlink($file);
+});
+
+test('import skips duplicates against existing participants', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+    $wheel->participants()->create(['name' => 'Alice']);
+
+    $txt = "Alice\nBob\nCharlie";
+
+    $file = tempnam(sys_get_temp_dir(), 'txt').'.txt';
+    file_put_contents($file, $txt);
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.txt',
+                'text/plain',
+                null,
+                true
+            ),
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonCount(2, 'imported')
+        ->assertJsonCount(1, 'skipped');
+
+    expect($wheel->participants()->count())->toBe(3);
+
+    unlink($file);
+});
+
+test('invalid file type returns validation error', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => 'not-a-file',
+        ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['file']);
+});
+
+test('missing file returns validation error', function () {
+    $user = User::factory()->create();
+    $wheel = Wheel::factory()->for($user)->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", []);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['file']);
+});
+
+test('unauthorized user cannot import participants to another wheel', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $wheel = Wheel::factory()->for($owner)->create();
+
+    $txt = "Alice\nBob";
+
+    $file = tempnam(sys_get_temp_dir(), 'txt').'.txt';
+    file_put_contents($file, $txt);
+
+    $this->actingAs($other)
+        ->postJson("/api/wheels/{$wheel->id}/participants/import", [
+            'file' => new UploadedFile(
+                $file,
+                'participants.txt',
+                'text/plain',
+                null,
+                true
+            ),
+        ])
+        ->assertStatus(403);
+
+    unlink($file);
 });

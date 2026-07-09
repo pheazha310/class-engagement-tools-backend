@@ -13,6 +13,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/wheels/{wheel}', [WheelController::class, 'update']);
     Route::delete('/wheels/{wheel}', [WheelController::class, 'destroy']);
     Route::post('/wheels/{wheel}/participants', [WheelController::class, 'storeParticipant']);
+    Route::post('/wheels/{wheel}/participants/import', [WheelController::class, 'importParticipants']);
     Route::delete('/wheels/{wheel}/participants/{participant}', [WheelController::class, 'destroyParticipant']);
 });
 

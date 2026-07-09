@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ImportParticipantsRequest;
 use App\Http\Requests\StoreParticipantRequest;
 use App\Http\Requests\StoreWheelRequest;
 use App\Http\Requests\UpdateWheelRequest;
@@ -76,6 +77,39 @@ class WheelController extends Controller
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    private function parseImportFile(string $content, string $extension): array
+    {
+        $names = [];
+
+        if ($extension === 'csv') {
+            $lines = explode("\n", $content);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+
+                $row = str_getcsv($line);
+                foreach ($row as $value) {
+                    $value = trim($value);
+                    if ($value !== '') {
+                        $names[] = $value;
+                    }
+                }
+            }
+        } else {
+            $lines = preg_split('/\r\n|\r|\n/', $content);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line !== '') {
+                    $names[] = $line;
+                }
+            }
+        }
+
+        return $names;
+    }
+
     public function storeParticipant(StoreParticipantRequest $request, Wheel $wheel): JsonResponse
     {
         Gate::authorize('update', $wheel);
@@ -83,6 +117,51 @@ class WheelController extends Controller
         $participant = $wheel->participants()->create($request->validated());
 
         return response()->json($participant, Response::HTTP_CREATED);
+    }
+
+    public function importParticipants(ImportParticipantsRequest $request, Wheel $wheel): JsonResponse
+    {
+        Gate::authorize('update', $wheel);
+
+        $uploadedFile = $request->validated('file');
+        $content = file_get_contents($uploadedFile->getRealPath());
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
+
+        $names = $this->parseImportFile($content, $extension);
+
+        $existingNames = $wheel->participants()
+            ->pluck('name')
+            ->map(fn ($name) => mb_strtolower(trim($name)))
+            ->toArray();
+
+        $uniqueNames = array_values(array_unique($names));
+        $imported = [];
+        $skipped = [];
+
+        foreach ($uniqueNames as $name) {
+            $normalized = mb_strtolower(trim($name));
+
+            if ($normalized === '') {
+                $skipped[] = ['name' => $name, 'reason' => 'Empty name'];
+
+                continue;
+            }
+
+            if (in_array($normalized, $existingNames, true)) {
+                $skipped[] = ['name' => $name, 'reason' => 'Duplicate'];
+
+                continue;
+            }
+
+            $imported[] = $wheel->participants()->create(['name' => trim($name)]);
+            $existingNames[] = $normalized;
+        }
+
+        return response()->json([
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'count' => count($imported),
+        ], Response::HTTP_CREATED);
     }
 
     public function destroyParticipant(Wheel $wheel, string $participant): JsonResponse
