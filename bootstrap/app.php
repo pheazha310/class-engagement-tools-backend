@@ -29,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
             'sanctum/csrf-cookie',
+            'login',
+            'logout',
+            'register',
+            'forgot-password',
+            'reset-password',
         ]);
 
         $middleware->web(append: [
