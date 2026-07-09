@@ -44,3 +44,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('/wheel/spin', [WheelController::class, 'spin']);
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
