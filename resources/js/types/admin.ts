@@ -1,0 +1,25 @@
+export type Paginated<T> = {
+    data: T[];
+    links: { url: string | null; label: string; active: boolean }[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+export type AdminUserListItem = {
+    id: number;
+    name: string;
+    email: string;
+    email_verified_at: string | null;
+    roles: string[];
+};
+
+export type AdminRoleListItem = {
+    id: number;
+    name: string;
+    users_count: number;
+    permissions: string[];
+    is_protected: boolean;
+};
