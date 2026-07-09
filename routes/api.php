@@ -1,7 +1,33 @@
 <?php
 
 use App\Http\Controllers\Api\WheelController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/login', function (Request $request) {
+    $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
+
+    if (! Auth::attempt($request->only('email', 'password'))) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
+
+    $request->session()->regenerate();
+
+    return response()->json(['message' => 'Logged in']);
+})->middleware('web');
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return response()->json(['message' => 'Logged out']);
+})->middleware('web');
 
 Route::post('/wheels/{wheel}/share-token', [WheelController::class, 'generateShareToken']);
 Route::get('/wheels/shared/{shareToken}', [WheelController::class, 'showShared'])->name('wheels.shared');
