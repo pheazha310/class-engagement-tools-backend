@@ -3,10 +3,8 @@
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
-use App\Models\Vote;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\assertDatabaseHas;
 
 beforeEach(function () {
     $this->teacher = User::factory()->create(['role' => 'teacher']);

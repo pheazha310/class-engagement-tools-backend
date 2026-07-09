@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(LocationSeeder::class);
+
         $teacher = User::factory()->create([
             'name' => 'Test Teacher',
             'email' => 'teacher@example.com',

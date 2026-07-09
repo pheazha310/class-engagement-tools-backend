@@ -4,7 +4,6 @@ namespace App\Repositories\Contracts;
 
 use App\Models\Poll;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 interface PollRepositoryInterface
 {

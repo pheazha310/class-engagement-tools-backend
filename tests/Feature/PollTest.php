@@ -8,10 +8,6 @@ use App\Models\Vote;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseCount;
 use function Pest\Laravel\assertDatabaseHas;
-use function Pest\Laravel\deleteJson;
-use function Pest\Laravel\getJson;
-use function Pest\Laravel\postJson;
-use function Pest\Laravel\putJson;
 
 beforeEach(function () {
     $this->teacher = User::factory()->create(['role' => 'teacher']);

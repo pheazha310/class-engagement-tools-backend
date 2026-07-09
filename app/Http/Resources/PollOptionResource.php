@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PollOption;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\PollOption */
+/** @mixin PollOption */
 class PollOptionResource extends JsonResource
 {
     public function toArray(Request $request): array

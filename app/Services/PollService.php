@@ -6,7 +6,6 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Repositories\Contracts\PollRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 readonly class PollService
 {

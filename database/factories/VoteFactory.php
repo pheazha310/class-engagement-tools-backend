@@ -5,14 +5,15 @@ namespace Database\Factories;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
+use App\Models\Vote;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Vote>
+ * @extends Factory<Vote>
  */
 class VoteFactory extends Factory
 {
-    protected $model = \App\Models\Vote::class;
+    protected $model = Vote::class;
 
     public function definition(): array
     {
