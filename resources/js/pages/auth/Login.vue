@@ -100,7 +100,7 @@ defineProps<{
                             required
                             :tabindex="2"
                             autocomplete="current-password"
-                            placeholder="password123"
+                            placeholder="password"
                             class="pl-10 pr-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
                         />
                         <button

@@ -7,6 +7,7 @@ use App\Models\PollOption;
 use App\Models\User;
 use App\Models\Vote;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,11 +15,15 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(LocationSeeder::class);
 
-        $teacher = User::factory()->create([
-            'name' => 'Test Teacher',
-            'email' => 'teacher@example.com',
-            'role' => 'teacher',
-        ]);
+        $teacher = User::firstOrCreate(
+            ['email' => 'teacher@example.com'],
+            [
+                'name' => 'Test Teacher',
+                'role' => 'teacher',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         $students = User::factory(10)->create([
             'role' => 'student',
