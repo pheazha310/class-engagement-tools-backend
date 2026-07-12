@@ -8,6 +8,7 @@ use App\Http\Requests\StoreParticipantRequest;
 use App\Http\Requests\StoreWheelRequest;
 use App\Http\Requests\UpdateWheelRequest;
 use App\Models\Wheel;
+use App\Models\WheelTheme;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,16 +18,22 @@ class WheelController extends Controller
 {
     public function index(): JsonResponse
     {
-        $wheels = auth()->user()->wheels()->with('participants')->get();
+        $wheels = auth()->user()->wheels()->with(['participants', 'theme'])->get();
 
         return response()->json($wheels, Response::HTTP_OK);
     }
 
     public function store(StoreWheelRequest $request): JsonResponse
     {
-        $wheel = auth()->user()->wheels()->create($request->validated());
+        $data = $request->validated();
 
-        return response()->json($wheel->load('participants'), Response::HTTP_CREATED);
+        if (empty($data['theme_id'])) {
+            $data['theme_id'] = WheelTheme::where('is_default', true)->first()?->id;
+        }
+
+        $wheel = auth()->user()->wheels()->create($data);
+
+        return response()->json($wheel->load(['participants', 'theme']), Response::HTTP_CREATED);
     }
 
     public function generateShareToken(Request $request, Wheel $wheel): JsonResponse
@@ -49,14 +56,14 @@ class WheelController extends Controller
             abort(Response::HTTP_NOT_FOUND, 'Shared wheel not found');
         }
 
-        return response()->json($wheel->load('participants'), Response::HTTP_OK);
+        return response()->json($wheel->load(['participants', 'theme']), Response::HTTP_OK);
     }
 
     public function show(Wheel $wheel): JsonResponse
     {
         Gate::authorize('view', $wheel);
 
-        return response()->json($wheel->load('participants'), Response::HTTP_OK);
+        return response()->json($wheel->load(['participants', 'theme']), Response::HTTP_OK);
     }
 
     public function update(UpdateWheelRequest $request, Wheel $wheel): JsonResponse
@@ -65,7 +72,7 @@ class WheelController extends Controller
 
         $wheel->update($request->validated());
 
-        return response()->json($wheel->load('participants'), Response::HTTP_OK);
+        return response()->json($wheel->load(['participants', 'theme']), Response::HTTP_OK);
     }
 
     public function destroy(Wheel $wheel): JsonResponse

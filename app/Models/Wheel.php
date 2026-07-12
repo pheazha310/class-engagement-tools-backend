@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo as ThemeBelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -16,10 +17,11 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string|null $description
  * @property string|null $color
+ * @property string|null $theme_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'description', 'color', 'removal_mode', 'share_token'])]
+#[Fillable(['name', 'description', 'color', 'theme_id', 'removal_mode', 'share_token'])]
 class Wheel extends Model
 {
     /** @use HasFactory<WheelFactory> */
@@ -41,6 +43,11 @@ class Wheel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function theme(): ThemeBelongsTo
+    {
+        return $this->belongsTo(WheelTheme::class);
     }
 
     public function participants(): HasMany

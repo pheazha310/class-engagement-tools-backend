@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use App\Models\Wheel;
+use App\Models\WheelTheme;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,6 +21,7 @@ class WheelFactory extends Factory
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'color' => fake()->hexColor(),
+            'theme_id' => WheelTheme::factory(),
             'removal_mode' => fake()->boolean(20),
         ];
     }

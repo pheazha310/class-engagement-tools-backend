@@ -17,6 +17,7 @@ class StoreWheelRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'color' => ['nullable', 'string', 'max:7'],
+            'theme_id' => ['nullable', 'uuid', 'exists:wheel_themes,id'],
         ];
     }
 }
