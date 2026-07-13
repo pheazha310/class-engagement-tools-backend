@@ -74,4 +74,9 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasMany(Wheel::class);
     }
+
+    public function gameSessions(): HasMany
+    {
+        return $this->hasMany(GameSession::class, 'teacher_id');
+    }
 }

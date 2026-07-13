@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('poll_id')->constrained()->cascadeOnDelete();
             $table->foreignId('option_id')->constrained('poll_options')->cascadeOnDelete();
-            $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
+            $table->uuid('student_id');
+            $table->foreign('student_id')->references('id')->on('users')->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['poll_id', 'student_id']);

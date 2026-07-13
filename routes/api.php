@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DistrictController;
+use App\Http\Controllers\Api\GameSessionController;
 use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\ProvinceController;
@@ -47,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
         Route::get('roles', [AdminUserController::class, 'roles']);
     });
+
+    Route::post('game-sessions', [GameSessionController::class, 'store']);
 });
 
 Route::post('/login', function (Request $request) {
