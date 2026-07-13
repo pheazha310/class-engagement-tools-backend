@@ -26,6 +26,8 @@ Route::get('schools', [SchoolController::class, 'index']);
 Route::get('location-schools', [LocationSchoolController::class, 'index']);
 Route::post('school-requests', [SchoolRequestController::class, 'store'])->middleware('throttle:10,1');
 Route::post('game-sessions', [GameSessionController::class, 'store']);
+Route::get('game-sessions/join/{joinCode}', [GameSessionController::class, 'showByJoinCode'])->name('game-sessions.join');
+Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);

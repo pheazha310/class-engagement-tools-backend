@@ -12,6 +12,7 @@ class GameSessionResource extends JsonResource
         return [
             'id' => $this->id,
             'game_id' => $this->id,
+            'join_code' => $this->join_code,
             'teacher_id' => $this->teacher_id,
             'game_type' => $this->game_type,
             'settings' => $this->settings,

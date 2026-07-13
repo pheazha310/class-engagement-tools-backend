@@ -15,6 +15,7 @@ class GameSessionFactory extends Factory
     {
         return [
             'teacher_id' => User::factory(),
+            'join_code' => strtoupper(fake()->unique()->regexify('[A-Z0-9]{6}')),
             'game_type' => fake()->randomElement(['poll', 'wheel']),
             'settings' => [
                 'time_limit' => fake()->numberBetween(30, 300),

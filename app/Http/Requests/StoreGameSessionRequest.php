@@ -16,6 +16,7 @@ class StoreGameSessionRequest extends FormRequest
         return [
             'game_type' => ['required', 'string', 'max:50'],
             'settings' => ['nullable', 'array'],
+            'join_code' => ['nullable', 'string', 'max:50', 'unique:game_sessions,join_code'],
         ];
     }
 }
