@@ -25,11 +25,15 @@ class CreateNewUser implements CreatesNewUsers
             'role' => ['required', 'string', 'in:teacher,student'],
         ])->validate();
 
-        return User::create([
+        $user = User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
             'role' => $input['role'] ?? 'student',
         ]);
+
+        $user->assignRole($user->role);
+
+        return $user;
     }
 }

@@ -26,6 +26,8 @@ class RegistrationService
                 'school_id' => $data['school_id'] ?? null,
             ]);
 
+            $user->assignRole($data['role']);
+
             return $user;
         });
     }
