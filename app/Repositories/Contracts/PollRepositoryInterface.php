@@ -13,6 +13,8 @@ interface PollRepositoryInterface
 
     public function findActive(): ?Poll;
 
+    public function findByRoomCode(string $roomCode): ?Poll;
+
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator;
 
     public function create(array $data): Poll;

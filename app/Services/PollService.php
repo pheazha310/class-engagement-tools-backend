@@ -23,12 +23,19 @@ readonly class PollService
         return $this->pollRepository->findById($id);
     }
 
+    public function findByRoomCode(string $roomCode): ?Poll
+    {
+        return $this->pollRepository->findByRoomCode($roomCode);
+    }
+
     public function create(array $data, User $teacher): Poll
     {
         $poll = $this->pollRepository->create([
             'teacher_id' => $teacher->id,
             'question' => $data['question'],
             'status' => 'draft',
+            'is_multiple_choice' => $data['is_multiple_choice'] ?? false,
+            'duration_minutes' => $data['duration_minutes'] ?? null,
         ]);
 
         $poll->options()->createMany(

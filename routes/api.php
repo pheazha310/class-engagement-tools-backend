@@ -8,17 +8,17 @@ use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\ProvinceController;
 use App\Http\Controllers\Api\RegistrationController;
-use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\SchoolRequestController;
 use App\Http\Controllers\Api\VoteController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/register', [RegistrationController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::get('countries', [CountryController::class, 'index']);
 Route::get('provinces', [ProvinceController::class, 'index']);
 Route::get('districts', [DistrictController::class, 'index']);
-Route::get('schools', [SchoolController::class, 'index']);
 Route::get('location-schools', [LocationSchoolController::class, 'index']);
 Route::post('school-requests', [SchoolRequestController::class, 'store'])->middleware('throttle:10,1');
 
@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
 
     Route::get('polls/active', [PollController::class, 'active'])->withoutMiddleware('auth:sanctum');
+    Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
     Route::get('polls/{poll}/results', [PollController::class, 'results']);
 
     Route::apiResource('polls', PollController::class)->except(['show']);

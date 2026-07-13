@@ -36,6 +36,26 @@ class PollController extends Controller
         return new PollResource($poll);
     }
 
+    public function joinByCode(Request $request): JsonResponse
+    {
+        $request->validate(['room_code' => ['required', 'string', 'size:6']]);
+
+        $poll = $this->pollService->findByRoomCode($request->input('room_code'));
+
+        if (! $poll || ! $poll->isActive()) {
+            return response()->json(['message' => 'Invalid or inactive room code.'], 404);
+        }
+
+        $hasVoted = auth()->check()
+            ? $poll->votes()->where('student_id', auth()->id())->exists()
+            : false;
+
+        return response()->json([
+            'poll' => new PollResource($poll),
+            'hasVoted' => $hasVoted,
+        ]);
+    }
+
     public function store(StorePollRequest $request): PollResource
     {
         $poll = $this->pollService->create(
