@@ -14,6 +14,8 @@ class PollResource extends JsonResource
         return [
             'id' => $this->id,
             'teacher_id' => $this->teacher_id,
+            'school_id' => $this->school_id,
+            'province_id' => $this->province_id,
             'question' => $this->question,
             'room_code' => $this->room_code,
             'status' => $this->status,

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -30,7 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['name', 'email', 'password', 'role', 'profile_image'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -56,6 +57,11 @@ class User extends Authenticatable implements PasskeyUser
         return $this->role === 'student';
     }
 
+    public function profile(): HasOne
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
     public function polls(): HasMany
     {
         return $this->hasMany(Poll::class, 'teacher_id');
@@ -64,5 +70,15 @@ class User extends Authenticatable implements PasskeyUser
     public function votes(): HasMany
     {
         return $this->hasMany(Vote::class, 'student_id');
+    }
+
+    public function schoolId(): ?int
+    {
+        return $this->profile?->school_id;
+    }
+
+    public function provinceId(): ?int
+    {
+        return $this->profile?->province_id;
     }
 }

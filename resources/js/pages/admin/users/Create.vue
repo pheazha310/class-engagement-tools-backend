@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { useForm } from '@inertiajs/vue3';
 import { Head } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import Form from '@/pages/admin/users/Form.vue';
@@ -16,7 +15,7 @@ defineOptions({
     },
 });
 
-const onSubmit = (form: ReturnType<typeof useForm>) => {
+const onSubmit = (form: any) => {
     form.post(store().url);
 };
 </script>

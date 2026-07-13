@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import type { useForm } from '@inertiajs/vue3';
 import { Head } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import Form from '@/pages/admin/users/Form.vue';
 import { index as usersIndex, update } from '@/routes/admin/users';
 
 const props = defineProps<{
-    user: { id: number; name: string; email: string; roles: string[] };
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        roles: string[];
+        country_name: string;
+        province_name: string;
+        school_name: string;
+    };
     roles: string[];
 }>();
 
@@ -19,7 +26,7 @@ defineOptions({
     },
 });
 
-const onSubmit = (form: ReturnType<typeof useForm>) => {
+const onSubmit = (form: any) => {
     form.put(update(props.user.id).url);
 };
 </script>

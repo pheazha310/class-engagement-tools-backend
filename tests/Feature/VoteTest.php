@@ -2,7 +2,9 @@
 
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Models\School;
 use App\Models\User;
+use App\Models\UserProfile;
 
 use function Pest\Laravel\actingAs;
 
@@ -46,4 +48,44 @@ it('returns 404 when no active poll', function () {
     actingAs($this->student)
         ->getJson('/api/polls/active')
         ->assertNotFound();
+});
+
+it('students only see active polls from their own school', function () {
+    $school = School::create(['name' => 'Alpha School']);
+    $otherSchool = School::create(['name' => 'Beta School']);
+    UserProfile::create(['user_id' => $this->student->id, 'school_id' => $school->id]);
+
+    $ownPoll = Poll::factory()->active()->create([
+        'teacher_id' => $this->teacher->id,
+        'school_id' => $school->id,
+        'province_id' => null,
+    ]);
+    $foreignPoll = Poll::factory()->active()->create([
+        'teacher_id' => $this->teacher->id,
+        'school_id' => $otherSchool->id,
+        'province_id' => null,
+    ]);
+
+    actingAs($this->student)
+        ->getJson('/api/polls/active')
+        ->assertOk()
+        ->assertJsonCount(1, 'polls')
+        ->assertJsonFragment(['id' => $ownPoll->id])
+        ->assertJsonMissing(['id' => $foreignPoll->id]);
+});
+
+it('students cannot view polls from a different school', function () {
+    $school = School::create(['name' => 'Alpha School']);
+    $otherSchool = School::create(['name' => 'Beta School']);
+    UserProfile::create(['user_id' => $this->student->id, 'school_id' => $school->id]);
+
+    $foreignPoll = Poll::factory()->active()->create([
+        'teacher_id' => $this->teacher->id,
+        'school_id' => $otherSchool->id,
+        'province_id' => null,
+    ]);
+
+    actingAs($this->student)
+        ->getJson("/api/polls/{$foreignPoll->id}")
+        ->assertForbidden();
 });

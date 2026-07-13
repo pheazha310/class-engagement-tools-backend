@@ -39,12 +39,19 @@ class VoteRequest extends FormRequest
                 $validator->errors()->add('poll', 'This poll is not active.');
             }
 
+            $user = $this->user();
+
+            // Ensure student belongs to the same school as the poll
+            if ($user && $poll->school_id && $user->schoolId() !== $poll->school_id) {
+                $validator->errors()->add('poll', 'This poll is not available for your school.');
+            }
+
             $option = PollOption::find($this->option_id);
             if ($option && $option->poll_id !== $poll->id) {
                 $validator->errors()->add('option_id', 'Selected option does not belong to this poll.');
             }
 
-            if ($this->user() && $poll->votes()->where('student_id', $this->user()->id)->exists()) {
+            if ($user && $poll->votes()->where('student_id', $user->id)->exists()) {
                 $validator->errors()->add('vote', 'You have already voted on this poll.');
             }
         });

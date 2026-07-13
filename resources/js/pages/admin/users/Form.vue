@@ -13,6 +13,9 @@ const props = defineProps<{
         name: string;
         email: string;
         roles: string[];
+        country_name: string;
+        province_name: string;
+        school_name: string;
     };
     submitLabel: string;
 }>();
@@ -26,6 +29,9 @@ const form = useForm({
     email: props.user?.email ?? '',
     password: '',
     password_confirmation: '',
+    country_name: props.user?.country_name ?? '',
+    province_name: props.user?.province_name ?? '',
+    school_name: props.user?.school_name ?? '',
     roles: props.user?.roles ?? ([] as string[]),
 });
 
@@ -52,6 +58,39 @@ const submit = () => emit('submit', form);
             <Label for="email">Email</Label>
             <Input id="email" v-model="form.email" type="email" required autocomplete="email" />
             <InputError :message="form.errors.email" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="country_name">Country</Label>
+            <Input
+                id="country_name"
+                v-model="form.country_name"
+                autocomplete="country-name"
+                placeholder="Country"
+            />
+            <InputError :message="form.errors.country_name" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="province_name">Province</Label>
+            <Input
+                id="province_name"
+                v-model="form.province_name"
+                autocomplete="address-level1"
+                placeholder="Province"
+            />
+            <InputError :message="form.errors.province_name" />
+        </div>
+
+        <div class="grid gap-2">
+            <Label for="school_name">School Name</Label>
+            <Input
+                id="school_name"
+                v-model="form.school_name"
+                autocomplete="organization"
+                placeholder="School Name"
+            />
+            <InputError :message="form.errors.school_name" />
         </div>
 
         <div class="grid gap-2">

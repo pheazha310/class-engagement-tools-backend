@@ -32,6 +32,8 @@ readonly class PollService
     {
         $poll = $this->pollRepository->create([
             'teacher_id' => $teacher->id,
+            'school_id' => $teacher->schoolId(),
+            'province_id' => $teacher->provinceId(),
             'question' => $data['question'],
             'status' => 'draft',
             'is_multiple_choice' => $data['is_multiple_choice'] ?? false,
@@ -79,6 +81,22 @@ readonly class PollService
     public function getActivePoll(): ?Poll
     {
         return $this->pollRepository->findActive();
+    }
+
+    public function getActivePollBySchool(int $schoolId): ?Poll
+    {
+        return $this->pollRepository->findActiveBySchool($schoolId);
+    }
+
+    public function getActivePollsBySchool(User $user): iterable
+    {
+        $schoolId = $user->schoolId();
+
+        if (! $schoolId) {
+            return collect();
+        }
+
+        return $this->pollRepository->findActivePollsBySchool($schoolId);
     }
 
     public function getResults(Poll $poll): array

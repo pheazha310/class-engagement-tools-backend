@@ -42,7 +42,7 @@ const deleteUser = (user: AdminUserListItem) => {
 };
 
 const paginationLabel = (label: string) =>
-    label.replace('&laquo;', '‹').replace('&raquo;', '›').replace(/&[a-z]+;/g, '').trim();
+    label.replace('&laquo;', '').replace('&raquo;', '').replace(/&[a-z]+;/g, '').trim();
 </script>
 
 <template>
@@ -62,7 +62,7 @@ const paginationLabel = (label: string) =>
         <Input
             v-model="search"
             type="search"
-            placeholder="Search by name or email…"
+            placeholder="Search by name or email..."
             class="max-w-sm"
         />
 
@@ -72,6 +72,9 @@ const paginationLabel = (label: string) =>
                     <tr>
                         <th class="px-4 py-3 font-medium">Name</th>
                         <th class="px-4 py-3 font-medium">Email</th>
+                        <th class="px-4 py-3 font-medium">School Name</th>
+                        <th class="px-4 py-3 font-medium">Country</th>
+                        <th class="px-4 py-3 font-medium">Province</th>
                         <th class="px-4 py-3 font-medium">Roles</th>
                         <th class="px-4 py-3 font-medium">Verified</th>
                         <th class="px-4 py-3 text-right font-medium">Actions</th>
@@ -85,6 +88,9 @@ const paginationLabel = (label: string) =>
                     >
                         <td class="px-4 py-3 font-medium">{{ user.name }}</td>
                         <td class="px-4 py-3 text-muted-foreground">{{ user.email }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ user.school_name }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ user.country_name }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ user.province_name }}</td>
                         <td class="px-4 py-3">
                             <div class="flex flex-wrap gap-1">
                                 <Badge
@@ -98,7 +104,7 @@ const paginationLabel = (label: string) =>
                                     v-if="user.roles.length === 0"
                                     class="text-muted-foreground"
                                 >
-                                    —
+                                    -
                                 </span>
                             </div>
                         </td>
@@ -130,7 +136,7 @@ const paginationLabel = (label: string) =>
                         </td>
                     </tr>
                     <tr v-if="users.data.length === 0">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">
+                        <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">
                             No users found.
                         </td>
                     </tr>
@@ -142,7 +148,7 @@ const paginationLabel = (label: string) =>
             v-if="users.last_page > 1"
             class="flex items-center justify-between text-sm text-muted-foreground"
         >
-            <span>Showing {{ users.from }}–{{ users.to }} of {{ users.total }}</span>
+            <span>Showing {{ users.from }}-{{ users.to }} of {{ users.total }}</span>
             <div class="flex gap-1">
                 <Button
                     v-for="link in users.links"

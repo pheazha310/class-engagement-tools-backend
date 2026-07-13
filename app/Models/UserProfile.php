@@ -12,6 +12,7 @@ class UserProfile extends Model
         'country_id',
         'province_id',
         'district_id',
+        'school_id',
     ];
 
     public function user(): BelongsTo
@@ -32,5 +33,10 @@ class UserProfile extends Model
     public function district(): BelongsTo
     {
         return $this->belongsTo(District::class);
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
     }
 }

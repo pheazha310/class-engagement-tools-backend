@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DistrictController;
 use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProvinceController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
@@ -25,7 +26,12 @@ Route::post('school-requests', [SchoolRequestController::class, 'store'])->middl
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
 
+    Route::get('profile', [ProfileController::class, 'show']);
+    Route::put('profile', [ProfileController::class, 'update']);
+    Route::post('profile/image', [ProfileController::class, 'uploadImage']);
+
     Route::get('polls/active', [PollController::class, 'active'])->withoutMiddleware('auth:sanctum');
+    Route::get('polls/school-active', [PollController::class, 'schoolActive']);
     Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
     Route::get('polls/{poll}/results', [PollController::class, 'results']);
 
@@ -34,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
+    Route::patch('polls/{poll}/status', [PollController::class, 'status']);
 
     Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 
