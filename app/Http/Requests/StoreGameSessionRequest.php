@@ -8,7 +8,7 @@ class StoreGameSessionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isTeacher() ?? false;
+        return true;
     }
 
     public function rules(): array

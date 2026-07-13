@@ -23,6 +23,11 @@ class GameSession extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    public function isGuest(): bool
+    {
+        return $this->teacher_id === null;
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';

@@ -5,6 +5,7 @@ use App\Models\User;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseCount;
 use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\postJson;
 
 beforeEach(function () {
     $this->teacher = User::factory()->create(['role' => 'teacher']);
@@ -45,10 +46,33 @@ it('requires game_type', function () {
         ->assertUnprocessable();
 });
 
-it('student cannot create a game session', function () {
+it('student can create a game session', function () {
     actingAs($this->student)
         ->postJson('/api/game-sessions', [
             'game_type' => 'poll',
+            'settings' => ['time_limit' => 120],
         ])
-        ->assertForbidden();
+        ->assertCreated()
+        ->assertJsonFragment(['game_type' => 'poll']);
+
+    assertDatabaseHas('game_sessions', [
+        'game_type' => 'poll',
+        'teacher_id' => $this->student->id,
+        'status' => 'active',
+    ]);
+});
+
+it('allows unauthenticated guest to create a game session', function () {
+    postJson('/api/game-sessions', [
+        'game_type' => 'poll',
+        'settings' => ['time_limit' => 120],
+    ])
+    ->assertCreated()
+    ->assertJsonFragment(['game_type' => 'poll']);
+
+    assertDatabaseHas('game_sessions', [
+        'game_type' => 'poll',
+        'teacher_id' => null,
+        'status' => 'active',
+    ]);
 });
