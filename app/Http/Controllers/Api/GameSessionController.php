@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGameSessionRequest;
 use App\Http\Resources\GameSessionResource;
 use App\Models\GameSession;
+use App\Services\GameQuestionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
@@ -53,6 +55,24 @@ class GameSessionController extends Controller
 
         return response()->json([
             'game_session' => new GameSessionResource($session),
+        ], Response::HTTP_OK);
+    }
+
+    public function generateQuestions(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'game_type' => ['required', 'string', 'max:50'],
+            'settings' => ['nullable', 'array'],
+        ]);
+
+        $questions = app(GameQuestionService::class)->generate(
+            $data['game_type'],
+            $data['settings'] ?? []
+        );
+
+        return response()->json([
+            'game_type' => $data['game_type'],
+            'questions' => $questions,
         ], Response::HTTP_OK);
     }
 }
