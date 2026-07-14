@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -25,7 +24,7 @@ class ProfileController extends Controller
                 'role' => $user->role,
                 'profile_image' => $user->profile_image,
                 'profile_image_url' => $user->profile_image
-                    ? asset('storage/' . $user->profile_image)
+                    ? asset('storage/'.$user->profile_image)
                     : null,
                 'school' => $user->profile?->school?->name ?? null,
             ],
@@ -54,7 +53,7 @@ class ProfileController extends Controller
                 'role' => $user->role,
                 'profile_image' => $user->profile_image,
                 'profile_image_url' => $user->profile_image
-                    ? asset('storage/' . $user->profile_image)
+                    ? asset('storage/'.$user->profile_image)
                     : null,
                 'school' => $user->profile?->school?->name ?? null,
             ],
@@ -86,7 +85,7 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Profile image updated successfully.',
             'profile_image' => $path,
-            'profile_image_url' => asset('storage/' . $path),
+            'profile_image_url' => asset('storage/'.$path),
         ]);
     }
 }

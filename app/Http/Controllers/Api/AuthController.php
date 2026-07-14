@@ -58,7 +58,7 @@ class AuthController extends Controller
             'role' => $user->role,
             'profile_image' => $user->profile_image,
             'profile_image_url' => $user->profile_image
-                ? asset('storage/' . $user->profile_image)
+                ? asset('storage/'.$user->profile_image)
                 : null,
             'school' => $user->profile?->school?->name ?? null,
         ];
