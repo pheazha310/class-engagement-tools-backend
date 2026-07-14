@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at', 'is_anonymous', 'is_quiz', 'is_open_text', 'max_points', 'correct_option_id'])]
+#[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at', 'school_id', 'province_id', 'is_anonymous', 'is_quiz', 'is_open_text', 'max_points'])]
 class Poll extends Model
 {
     /** @use HasFactory<PollFactory> */
@@ -50,6 +50,16 @@ class Poll extends Model
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    public function province(): BelongsTo
+    {
+        return $this->belongsTo(Province::class);
     }
 
     public function options(): HasMany
@@ -95,6 +105,11 @@ class Poll extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    public function scopeBySchool($query, int $schoolId)
+    {
+        return $query->where('school_id', $schoolId);
     }
 
     public function scopeByRoomCode($query, string $roomCode)

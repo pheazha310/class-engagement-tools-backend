@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePollRequest;
 use App\Http\Requests\UpdatePollRequest;
+use App\Http\Requests\UpdatePollStatusRequest;
 use App\Http\Resources\PollResource;
 use App\Http\Resources\PollResultResource;
 use App\Models\Poll;
@@ -30,8 +31,33 @@ class PollController extends Controller
         return PollResource::collection($polls);
     }
 
-    public function show(Poll $poll): PollResource
+    public function show(Request $request, Poll $poll): PollResource|JsonResponse
     {
+        $user = $request->user();
+
+        if ($user?->isStudent()) {
+            if (! $poll->isActive() || $poll->school_id === null || $user->schoolId() !== $poll->school_id) {
+                return response()->json(['message' => 'This poll is not available for your school.'], 403);
+            }
+            $poll->load('options');
+
+            return new PollResource($poll);
+        }
+
+        if ($user?->isTeacher()) {
+            if ($poll->teacher_id !== $user->id) {
+                return response()->json(['message' => 'Unauthorized.'], 403);
+            }
+            $poll->load('options');
+
+            return new PollResource($poll);
+        }
+
+        // Unauthenticated / public access
+        if (! $poll->isActive()) {
+            return response()->json(['message' => 'Poll not found or not active.'], 404);
+        }
+
         $poll->load('options');
 
         return new PollResource($poll);
@@ -47,9 +73,14 @@ class PollController extends Controller
             return response()->json(['message' => 'Invalid or inactive room code.'], 404);
         }
 
-        $hasVoted = auth()->check()
-            ? $poll->votes()->where('student_id', auth()->id())->exists()
-            : false;
+        $user = $request->user();
+        $voterToken = $request->input('voter_token');
+
+        $hasVoted = $user
+            ? $poll->votes()->where('student_id', $user->id)->exists()
+            : ($voterToken
+                ? $poll->votes()->where('voter_token', $voterToken)->exists()
+                : false);
 
         return response()->json([
             'poll' => new PollResource($poll),
@@ -95,11 +126,6 @@ class PollController extends Controller
             return response()->json(['message' => 'Only draft polls can be started.'], 422);
         }
 
-        $activePoll = $this->pollService->getActivePoll();
-        if ($activePoll && $activePoll->id !== $poll->id) {
-            return response()->json(['message' => 'Only one poll can be active at a time.'], 422);
-        }
-
         $poll = $this->pollService->start($poll);
 
         return response()->json([
@@ -126,8 +152,27 @@ class PollController extends Controller
         ]);
     }
 
-    public function active(): JsonResponse
+    public function active(Request $request): JsonResponse
     {
+        $user = $request->user() ?? auth()->user();
+        $voterToken = $request->input('voter_token');
+
+        if ($user && $user->isStudent() && $user->schoolId()) {
+            $polls = $this->pollService->getActivePollsBySchool($user);
+
+            return response()->json([
+                'polls' => PollResource::collection($polls),
+            ]);
+        }
+
+        if ($user && $user->isTeacher() && $user->schoolId()) {
+            $polls = $this->pollService->getActivePollsBySchool($user);
+
+            return response()->json([
+                'polls' => PollResource::collection($polls),
+            ]);
+        }
+
         $poll = $this->pollService->getActivePoll();
 
         if (! $poll) {
@@ -136,11 +181,32 @@ class PollController extends Controller
 
         $poll->load('options');
 
+        if ($user?->isStudent()) {
+            $hasVoted = $poll->votes()->where('student_id', $user->id)->exists();
+        } elseif ($voterToken) {
+            $hasVoted = $poll->votes()->where('voter_token', $voterToken)->exists();
+        } else {
+            $hasVoted = false;
+        }
+
         return response()->json([
             'poll' => new PollResource($poll),
-            'hasVoted' => auth()->user()?->isStudent()
-                ? $poll->votes()->where('student_id', auth()->id())->exists()
-                : false,
+            'hasVoted' => $hasVoted,
+        ]);
+    }
+
+    public function schoolActive(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user->schoolId()) {
+            return response()->json(['message' => 'You are not assigned to a school.'], 403);
+        }
+
+        $polls = $this->pollService->getActivePollsBySchool($user);
+
+        return response()->json([
+            'polls' => PollResource::collection($polls),
         ]);
     }
 
@@ -151,18 +217,19 @@ class PollController extends Controller
         return new PollResultResource($results);
     }
 
-    public function qrCode(Poll $poll, Request $request): JsonResponse
+    public function status(UpdatePollStatusRequest $request, Poll $poll): JsonResponse
     {
-        if ($poll->teacher_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
+        $requestedStatus = $request->validated()['status'];
+
+        if ($requestedStatus === 'active') {
+            $poll = $this->pollService->start($poll);
+        } else {
+            $poll = $this->pollService->end($poll);
         }
 
-        $joinUrl = URL::to('/live-voting').'?code='.$poll->room_code;
-
         return response()->json([
-            'room_code' => $poll->room_code,
-            'join_url' => $joinUrl,
-            'poll_id' => $poll->id,
+            'message' => "Poll {$requestedStatus} successfully.",
+            'poll' => new PollResource($poll),
         ]);
     }
 }

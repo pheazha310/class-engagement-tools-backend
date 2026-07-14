@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['poll_id', 'option_id', 'student_id', 'points', 'text_response'])]
+#[Fillable(['poll_id', 'option_id', 'student_id', 'points', 'text_response', 'voter_token'])]
 class Vote extends Model
 {
     /** @use HasFactory<VoteFactory> */

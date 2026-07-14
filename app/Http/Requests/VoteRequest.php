@@ -10,7 +10,7 @@ class VoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isStudent() ?? false;
+        return true;
     }
 
     public function rules(): array
@@ -30,11 +30,17 @@ class VoteRequest extends FormRequest
                 'string',
                 'max:1000',
             ],
+            'voter_token' => [
+                'string',
+                'max:100',
+            ],
         ];
 
         if ($poll && $poll->is_open_text) {
             $rules['option_id'] = ['nullable', 'integer', 'exists:poll_options,id'];
             $rules['text_response'][] = 'required_without:option_id';
+        } else {
+            $rules['option_id'][] = 'required';
         }
 
         if ($poll && $poll->max_points) {
@@ -59,6 +65,12 @@ class VoteRequest extends FormRequest
                 $validator->errors()->add('poll', 'This poll is not active.');
             }
 
+            $user = $this->user();
+
+            if ($user && $poll->school_id && $user->schoolId() !== $poll->school_id) {
+                $validator->errors()->add('poll', 'This poll is not available for your school.');
+            }
+
             $optionId = $this->option_id;
 
             if ($optionId) {
@@ -68,7 +80,9 @@ class VoteRequest extends FormRequest
                 }
             }
 
-            if ($this->user() && $poll->votes()->where('student_id', $this->user()->id)->exists()) {
+            if ($user && $poll->votes()->where('student_id', $user->id)->exists()) {
+                $validator->errors()->add('vote', 'You have already voted on this poll.');
+            } elseif (! $user && $this->voter_token && $poll->votes()->where('voter_token', $this->voter_token)->exists()) {
                 $validator->errors()->add('vote', 'You have already voted on this poll.');
             }
         });

@@ -15,15 +15,23 @@ readonly class VoteService
         private PollRepositoryInterface $pollRepository,
     ) {}
 
-    public function vote(Poll $poll, ?int $optionId, User $student, ?int $points = null, ?string $textResponse = null): array
+    public function vote(Poll $poll, ?int $optionId, User|string|null $voter, ?int $points = null, ?string $textResponse = null, ?string $voterToken = null): array
     {
-        $this->voteRepository->create([
+        $data = [
             'poll_id' => $poll->id,
             'option_id' => $optionId,
-            'student_id' => $student->id,
             'points' => $points ?? ($poll->max_points ? 1 : 1),
             'text_response' => $textResponse,
-        ]);
+        ];
+
+        if ($voter instanceof User) {
+            $data['student_id'] = $voter->id;
+            $data['voter_token'] = 'user_'.$voter->id;
+        } elseif (is_string($voterToken)) {
+            $data['voter_token'] = $voterToken;
+        }
+
+        $this->voteRepository->create($data);
 
         $results = $this->pollRepository->getResults($poll);
 
@@ -36,8 +44,8 @@ readonly class VoteService
         return $results;
     }
 
-    public function hasVoted(Poll $poll, User $student): bool
+    public function hasVoted(Poll $poll, User|string|null $voter): bool
     {
-        return $this->voteRepository->hasVoted($poll, $student);
+        return $this->voteRepository->hasVoted($poll, $voter);
     }
 }

@@ -153,11 +153,13 @@ it('teacher can delete a draft poll', function () {
     assertDatabaseCount('polls', 0);
 });
 
-it('only one poll can be active at a time', function () {
-    $activePoll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('allows starting a draft poll even when another poll is active', function () {
+    Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
     $draftPoll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
 
     actingAs($this->teacher)
         ->postJson("/api/polls/{$draftPoll->id}/start")
-        ->assertUnprocessable();
+        ->assertOk();
+
+    expect($draftPoll->fresh()->status)->toBe('active');
 });

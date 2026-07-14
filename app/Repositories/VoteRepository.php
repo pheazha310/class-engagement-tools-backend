@@ -9,12 +9,19 @@ use App\Repositories\Contracts\VoteRepositoryInterface;
 
 class VoteRepository implements VoteRepositoryInterface
 {
-    public function hasVoted(Poll $poll, User $student): bool
+    public function hasVoted(Poll $poll, User|string|null $voter): bool
     {
-        return Vote::query()
-            ->where('poll_id', $poll->id)
-            ->where('student_id', $student->id)
-            ->exists();
+        $query = Vote::query()->where('poll_id', $poll->id);
+
+        if ($voter instanceof User) {
+            $query->where('student_id', $voter->id);
+        } elseif (is_string($voter)) {
+            $query->where('voter_token', $voter);
+        } else {
+            return false;
+        }
+
+        return $query->exists();
     }
 
     public function create(array $data): Vote
@@ -26,6 +33,7 @@ class VoteRepository implements VoteRepositoryInterface
     {
         return Vote::query()
             ->where('poll_id', $poll->id)
+            ->whereNotNull('option_id')
             ->groupBy('option_id')
             ->selectRaw('option_id, count(*) as count')
             ->pluck('count', 'option_id')

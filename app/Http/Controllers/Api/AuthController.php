@@ -26,14 +26,14 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return response()->json([
-            'user' => $request->user(),
+            'user' => $this->formatUser($request->user()),
         ]);
     }
 
     public function user(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => $request->user(),
+            'user' => $this->formatUser($request->user()),
         ]);
     }
 
@@ -45,5 +45,22 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    protected function formatUser($user): array
+    {
+        $user->loadMissing(['profile.school']);
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'profile_image' => $user->profile_image,
+            'profile_image_url' => $user->profile_image
+                ? asset('storage/'.$user->profile_image)
+                : null,
+            'school' => $user->profile?->school?->name ?? null,
+        ];
     }
 }
