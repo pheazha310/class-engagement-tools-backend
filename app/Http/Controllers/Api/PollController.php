@@ -38,10 +38,23 @@ class PollController extends Controller
             if (! $poll->isActive() || $poll->school_id === null || $user->schoolId() !== $poll->school_id) {
                 return response()->json(['message' => 'This poll is not available for your school.'], 403);
             }
-        } elseif ($user?->isTeacher()) {
+            $poll->load('options');
+
+            return new PollResource($poll);
+        }
+
+        if ($user?->isTeacher()) {
             if ($poll->teacher_id !== $user->id) {
                 return response()->json(['message' => 'Unauthorized.'], 403);
             }
+            $poll->load('options');
+
+            return new PollResource($poll);
+        }
+
+        // Unauthenticated / public access
+        if (! $poll->isActive()) {
+            return response()->json(['message' => 'Poll not found or not active.'], 404);
         }
 
         $poll->load('options');
@@ -59,9 +72,14 @@ class PollController extends Controller
             return response()->json(['message' => 'Invalid or inactive room code.'], 404);
         }
 
-        $hasVoted = auth()->check()
-            ? $poll->votes()->where('student_id', auth()->id())->exists()
-            : false;
+        $user = $request->user();
+        $voterToken = $request->input('voter_token');
+
+        $hasVoted = $user
+            ? $poll->votes()->where('student_id', $user->id)->exists()
+            : ($voterToken
+                ? $poll->votes()->where('voter_token', $voterToken)->exists()
+                : false);
 
         return response()->json([
             'poll' => new PollResource($poll),
@@ -136,6 +154,7 @@ class PollController extends Controller
     public function active(Request $request): JsonResponse
     {
         $user = $request->user() ?? auth()->user();
+        $voterToken = $request->input('voter_token');
 
         if ($user && $user->isStudent() && $user->schoolId()) {
             $polls = $this->pollService->getActivePollsBySchool($user);
@@ -161,11 +180,17 @@ class PollController extends Controller
 
         $poll->load('options');
 
+        if ($user?->isStudent()) {
+            $hasVoted = $poll->votes()->where('student_id', $user->id)->exists();
+        } elseif ($voterToken) {
+            $hasVoted = $poll->votes()->where('voter_token', $voterToken)->exists();
+        } else {
+            $hasVoted = false;
+        }
+
         return response()->json([
             'poll' => new PollResource($poll),
-            'hasVoted' => $user?->isStudent()
-                ? $poll->votes()->where('student_id', $user->id)->exists()
-                : false,
+            'hasVoted' => $hasVoted,
         ]);
     }
 

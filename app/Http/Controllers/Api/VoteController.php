@@ -16,10 +16,16 @@ class VoteController extends Controller
 
     public function vote(VoteRequest $request, Poll $poll): PollResultResource
     {
+        $user = $request->user();
+        $optionId = $request->input('option_id') ? (int) $request->input('option_id') : null;
+
         $results = $this->voteService->vote(
             $poll,
-            (int) $request->input('option_id'),
-            $request->user(),
+            $optionId,
+            $user,
+            $request->input('points') ? (int) $request->input('points') : null,
+            $request->input('text_response'),
+            $request->input('voter_token'),
         );
 
         return new PollResultResource($results);

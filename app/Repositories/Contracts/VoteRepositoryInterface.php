@@ -8,7 +8,7 @@ use App\Models\Vote;
 
 interface VoteRepositoryInterface
 {
-    public function hasVoted(Poll $poll, User $student): bool;
+    public function hasVoted(Poll $poll, User|string|null $voter): bool;
 
     public function create(array $data): Vote;
 

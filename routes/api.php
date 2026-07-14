@@ -34,6 +34,12 @@ Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
 Route::put('quizzes/{quiz}', [QuizController::class, 'update']);
 Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy']);
 Route::post('quizzes/{quiz}/duplicate', [QuizController::class, 'duplicate']);
+// Public poll routes (no auth required)
+Route::get('polls/active', [PollController::class, 'active']);
+Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
+Route::get('polls/{poll}/results', [PollController::class, 'results']);
+Route::get('polls/{poll}', [PollController::class, 'show']);
+Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
@@ -42,19 +48,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
 
-    Route::get('polls/active', [PollController::class, 'active'])->withoutMiddleware('auth:sanctum');
     Route::get('polls/school-active', [PollController::class, 'schoolActive']);
-    Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
-    Route::get('polls/{poll}/results', [PollController::class, 'results']);
 
     Route::apiResource('polls', PollController::class)->except(['show']);
-    Route::get('polls/{poll}', [PollController::class, 'show']);
-
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
     Route::patch('polls/{poll}/status', [PollController::class, 'status']);
-
-    Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('users', [AdminUserController::class, 'index']);
