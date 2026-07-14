@@ -19,6 +19,13 @@ class StorePollRequest extends FormRequest
             'options.*' => ['required', 'string', 'max:255', 'distinct'],
             'is_multiple_choice' => ['sometimes', 'boolean'],
             'duration_minutes' => ['sometimes', 'integer', 'min:1', 'max:120'],
+            'is_anonymous' => ['sometimes', 'boolean'],
+            'is_quiz' => ['sometimes', 'boolean'],
+            'is_open_text' => ['sometimes', 'boolean'],
+            'max_points' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'correct_option_id' => ['sometimes', 'integer', 'exists:poll_options,id'],
+            'options_correct' => ['sometimes', 'array'],
+            'options_correct.*' => ['boolean'],
         ];
     }
 
@@ -31,6 +38,7 @@ class StorePollRequest extends FormRequest
             'options.max' => 'A poll can have at most 10 options.',
             'options.*.distinct' => 'Duplicate options are not allowed.',
             'duration_minutes.max' => 'Maximum duration is 120 minutes.',
+            'max_points.max' => 'Maximum points is 100.',
         ];
     }
 }

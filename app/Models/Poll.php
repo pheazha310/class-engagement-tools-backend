@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at'])]
+#[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at', 'is_anonymous', 'is_quiz', 'is_open_text', 'max_points', 'correct_option_id'])]
 class Poll extends Model
 {
     /** @use HasFactory<PollFactory> */
@@ -22,6 +22,10 @@ class Poll extends Model
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
             'is_multiple_choice' => 'boolean',
+            'is_anonymous' => 'boolean',
+            'is_quiz' => 'boolean',
+            'is_open_text' => 'boolean',
+            'max_points' => 'integer',
         ];
     }
 
@@ -61,6 +65,11 @@ class Poll extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(Vote::class)->selectRaw('DISTINCT student_id');
+    }
+
+    public function correctOption(): BelongsTo
+    {
+        return $this->belongsTo(PollOption::class, 'correct_option_id');
     }
 
     public function participantCount(): int

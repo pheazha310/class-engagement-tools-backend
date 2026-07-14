@@ -15,12 +15,14 @@ readonly class VoteService
         private PollRepositoryInterface $pollRepository,
     ) {}
 
-    public function vote(Poll $poll, int $optionId, User $student): array
+    public function vote(Poll $poll, ?int $optionId, User $student, ?int $points = null, ?string $textResponse = null): array
     {
         $this->voteRepository->create([
             'poll_id' => $poll->id,
             'option_id' => $optionId,
             'student_id' => $student->id,
+            'points' => $points ?? ($poll->max_points ? 1 : 1),
+            'text_response' => $textResponse,
         ]);
 
         $results = $this->pollRepository->getResults($poll);

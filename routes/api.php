@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
+    Route::get('polls/{poll}/qr', [PollController::class, 'qrCode']);
 
     Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 

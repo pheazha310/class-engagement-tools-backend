@@ -15,13 +15,33 @@ class VoteRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $poll = $this->route('poll');
+
+        $rules = [
             'option_id' => [
-                'required',
                 'integer',
                 'exists:poll_options,id',
             ],
+            'points' => [
+                'integer',
+                'min:1',
+            ],
+            'text_response' => [
+                'string',
+                'max:1000',
+            ],
         ];
+
+        if ($poll && $poll->is_open_text) {
+            $rules['option_id'] = ['nullable', 'integer', 'exists:poll_options,id'];
+            $rules['text_response'][] = 'required_without:option_id';
+        }
+
+        if ($poll && $poll->max_points) {
+            $rules['points'][] = 'max:'.$poll->max_points;
+        }
+
+        return $rules;
     }
 
     public function withValidator($validator): void
@@ -39,9 +59,13 @@ class VoteRequest extends FormRequest
                 $validator->errors()->add('poll', 'This poll is not active.');
             }
 
-            $option = PollOption::find($this->option_id);
-            if ($option && $option->poll_id !== $poll->id) {
-                $validator->errors()->add('option_id', 'Selected option does not belong to this poll.');
+            $optionId = $this->option_id;
+
+            if ($optionId) {
+                $option = PollOption::find($optionId);
+                if ($option && $option->poll_id !== $poll->id) {
+                    $validator->errors()->add('option_id', 'Selected option does not belong to this poll.');
+                }
             }
 
             if ($this->user() && $poll->votes()->where('student_id', $this->user()->id)->exists()) {
@@ -53,8 +77,10 @@ class VoteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'option_id.required' => 'Please select an option.',
             'option_id.exists' => 'Selected option is invalid.',
+            'text_response.required_without' => 'Please provide a response.',
+            'text_response.max' => 'Response must not exceed 1000 characters.',
+            'points.max' => 'Points exceed the maximum allowed for this poll.',
         ];
     }
 }

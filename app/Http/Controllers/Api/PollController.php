@@ -12,6 +12,7 @@ use App\Services\PollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Support\Facades\URL;
 
 class PollController extends Controller
 {
@@ -148,5 +149,20 @@ class PollController extends Controller
         $results = $this->pollService->getResults($poll);
 
         return new PollResultResource($results);
+    }
+
+    public function qrCode(Poll $poll, Request $request): JsonResponse
+    {
+        if ($poll->teacher_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $joinUrl = URL::to('/live-voting').'?code='.$poll->room_code;
+
+        return response()->json([
+            'room_code' => $poll->room_code,
+            'join_url' => $joinUrl,
+            'poll_id' => $poll->id,
+        ]);
     }
 }

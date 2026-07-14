@@ -9,13 +9,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['poll_id', 'option_text'])]
+#[Fillable(['poll_id', 'option_text', 'is_correct'])]
 class PollOption extends Model
 {
     /** @use HasFactory<PollOptionFactory> */
     use HasFactory;
 
     protected $table = 'poll_options';
+
+    protected function casts(): array
+    {
+        return [
+            'is_correct' => 'boolean',
+        ];
+    }
 
     public function poll(): BelongsTo
     {

@@ -18,8 +18,10 @@ class VoteController extends Controller
     {
         $results = $this->voteService->vote(
             $poll,
-            (int) $request->input('option_id'),
+            $request->input('option_id') ? (int) $request->input('option_id') : null,
             $request->user(),
+            $request->input('points') ? (int) $request->input('points') : null,
+            $request->input('text_response'),
         );
 
         return new PollResultResource($results);
