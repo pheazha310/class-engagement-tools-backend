@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Fortify\CreateNewUser;
-use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Laravel\Fortify\Features;
 

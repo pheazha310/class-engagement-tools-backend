@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('country_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('province_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('district_id')->nullable()->constrained()->nullOnDelete();

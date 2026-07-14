@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProvinceController;
+use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
 use App\Http\Controllers\Api\VoteController;
@@ -25,6 +26,14 @@ Route::get('provinces', [ProvinceController::class, 'index']);
 Route::get('districts', [DistrictController::class, 'index']);
 Route::get('location-schools', [LocationSchoolController::class, 'index']);
 Route::post('school-requests', [SchoolRequestController::class, 'store'])->middleware('throttle:10,1');
+
+// Quiz routes — public (no auth required)
+Route::get('quizzes', [QuizController::class, 'index']);
+Route::post('quizzes', [QuizController::class, 'store']);
+Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
+Route::put('quizzes/{quiz}', [QuizController::class, 'update']);
+Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy']);
+Route::post('quizzes/{quiz}/duplicate', [QuizController::class, 'duplicate']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);

@@ -9,7 +9,6 @@ use App\Models\Country;
 use App\Models\Province;
 use App\Models\School;
 use App\Models\User;
-use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

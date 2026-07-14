@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('school_requests', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
-            $table->foreignId('user_id')->nullable()->change()->constrained()->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->change()->constrained('users')->nullOnDelete();
             $table->string('email')->nullable()->after('user_id');
         });
     }
@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::table('school_requests', function (Blueprint $table) {
             $table->dropColumn('email');
             $table->dropForeign(['user_id']);
-            $table->foreignId('user_id')->nullable(false)->change()->constrained()->cascadeOnDelete();
+            $table->foreignUuid('user_id')->nullable(false)->change()->constrained('users')->cascadeOnDelete();
         });
     }
 };
