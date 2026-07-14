@@ -47,7 +47,9 @@ class GameSessionController extends Controller
 
     public function showByJoinCode(string $joinCode): JsonResponse
     {
-        $session = GameSession::where('join_code', $joinCode)->firstOrFail();
+        $session = GameSession::where('join_code', $joinCode)
+            ->where('status', 'active')
+            ->firstOrFail();
 
         return response()->json([
             'game_session' => new GameSessionResource($session),

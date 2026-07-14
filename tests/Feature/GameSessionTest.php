@@ -136,3 +136,49 @@ it('accepts a custom join code when provided', function () {
         'join_code' => $customCode,
     ]);
 });
+
+it('allows a student to join an active game with a valid code', function () {
+    $session = GameSession::factory()->create([
+        'game_type' => 'poll',
+        'status' => 'active',
+    ]);
+
+    actingAs($this->student)
+        ->getJson("/api/game-sessions/join/{$session->join_code}")
+        ->assertOk()
+        ->assertJsonFragment([
+            'join_code' => $session->join_code,
+            'game_type' => 'poll',
+            'status' => 'active',
+        ]);
+});
+
+it('allows an unauthenticated user to join an active game with a valid code', function () {
+    $session = GameSession::factory()->create([
+        'game_type' => 'poll',
+        'status' => 'active',
+    ]);
+
+    $this->getJson("/api/game-sessions/join/{$session->join_code}")
+        ->assertOk()
+        ->assertJsonFragment([
+            'join_code' => $session->join_code,
+            'game_type' => 'poll',
+            'status' => 'active',
+        ]);
+});
+
+it('returns not found when joining with an invalid code', function () {
+    $this->getJson('/api/game-sessions/join/INVALID')
+        ->assertNotFound();
+});
+
+it('returns not found when joining an ended game session', function () {
+    $session = GameSession::factory()->create([
+        'game_type' => 'poll',
+        'status' => 'ended',
+    ]);
+
+    $this->getJson("/api/game-sessions/join/{$session->join_code}")
+        ->assertNotFound();
+});
