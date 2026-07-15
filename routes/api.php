@@ -28,6 +28,7 @@ Route::post('school-requests', [SchoolRequestController::class, 'store'])->middl
 Route::post('game-sessions', [GameSessionController::class, 'store']);
 Route::post('game-sessions/generate-questions', [GameSessionController::class, 'generateQuestions']);
 Route::get('game-sessions/join/{joinCode}', [GameSessionController::class, 'showByJoinCode'])->name('game-sessions.join');
+Route::post('game-sessions/{gameSession}/validate-answer', [GameSessionController::class, 'validateAnswer'])->name('game-sessions.validate-answer');
 Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {

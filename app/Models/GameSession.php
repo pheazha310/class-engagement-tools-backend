@@ -56,4 +56,9 @@ class GameSession extends Model
     {
         return $this->status === 'ended';
     }
+
+    public function answers()
+    {
+        return $this->hasMany(GameAnswer::class);
+    }
 }

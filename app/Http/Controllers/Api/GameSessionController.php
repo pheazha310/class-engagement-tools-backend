@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGameSessionRequest;
+use App\Http\Requests\ValidateGameAnswerRequest;
+use App\Http\Resources\GameAnswerResource;
 use App\Http\Resources\GameSessionResource;
+use App\Models\GameAnswer;
 use App\Models\GameSession;
 use App\Services\GameQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class GameSessionController extends Controller
 {
@@ -73,6 +77,41 @@ class GameSessionController extends Controller
         return response()->json([
             'game_type' => $data['game_type'],
             'questions' => $questions,
+        ], Response::HTTP_OK);
+    }
+
+    public function validateAnswer(ValidateGameAnswerRequest $request, GameSession $gameSession): JsonResponse
+    {
+        if (! $gameSession->isActive()) {
+            return response()->json([
+                'message' => 'Game session is not active.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = $request->validated();
+
+        $submitted = Str::of($data['submitted_answer'])->trim()->toString();
+        $expected = Str::of($data['correct_answer'])->trim()->toString();
+
+        $isCorrect = Str::lower($submitted) === Str::lower($expected);
+        $pointsAwarded = $isCorrect ? 10 : 0;
+
+        $user = Auth::user();
+
+        $answer = GameAnswer::create([
+            'game_session_id' => $gameSession->id,
+            'question_id' => $data['question_id'] ?? null,
+            'submitted_answer' => $data['submitted_answer'],
+            'is_correct' => $isCorrect,
+            'points_awarded' => $pointsAwarded,
+            'user_id' => $user?->id,
+            'participant_name' => $data['participant_name'] ?? ($user?->name ?? null),
+        ]);
+
+        return response()->json([
+            'is_correct' => $isCorrect,
+            'points_awarded' => $pointsAwarded,
+            'game_answer' => new GameAnswerResource($answer),
         ], Response::HTTP_OK);
     }
 }
