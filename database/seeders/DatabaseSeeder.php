@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $teacher = User::firstOrCreate(
             ['email' => 'teacher@example.com'],
             [
+                'id' => fake()->uuid(),
                 'name' => 'Test Teacher',
                 'role' => 'teacher',
                 'password' => Hash::make('password'),

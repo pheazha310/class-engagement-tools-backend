@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -9,6 +10,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('users', UserController::class)->except('show');
         Route::resource('roles', RoleController::class)->except('show');
         Route::resource('locations', LocationController::class)->except('show');

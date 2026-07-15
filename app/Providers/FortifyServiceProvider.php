@@ -29,7 +29,7 @@ class FortifyServiceProvider extends ServiceProvider
                 public function toResponse($request): RedirectResponse
                 {
                     if (auth()->check() && auth()->user()->isStudent()) {
-                        return redirect()->route('student.dashboard');
+                        return redirect()->route('admin.dashboard');
                     }
 
                     return redirect()->route('verification.notice');

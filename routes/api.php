@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
@@ -84,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('users/{user}', [AdminUserController::class, 'update']);
         Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
         Route::get('roles', [AdminUserController::class, 'roles']);
+        Route::get('dashboard', [AdminDashboardController::class, 'index']);
     });
 });
 

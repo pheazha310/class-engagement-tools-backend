@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\StudentDashboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -11,16 +10,12 @@ Route::redirect('/', '/login');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        if (Auth::user()->isStudent()) {
-            return redirect()->route('student.dashboard');
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
         }
 
         return Inertia::render('Dashboard');
     })->name('dashboard');
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
 });
 
 require __DIR__.'/settings.php';
