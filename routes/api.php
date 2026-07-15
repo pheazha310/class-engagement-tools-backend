@@ -9,6 +9,10 @@ use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProvinceController;
 use App\Http\Controllers\Api\QuizController;
+use App\Http\Controllers\Api\QuizQuestionController;
+use App\Http\Controllers\Api\QuizRankingController;
+use App\Http\Controllers\Api\QuizReportController;
+use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
 use App\Http\Controllers\Api\VoteController;
@@ -34,6 +38,24 @@ Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
 Route::put('quizzes/{quiz}', [QuizController::class, 'update']);
 Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy']);
 Route::post('quizzes/{quiz}/duplicate', [QuizController::class, 'duplicate']);
+
+// Question routes — public (no auth required)
+Route::get('quizzes/{quiz}/questions', [QuizQuestionController::class, 'index']);
+Route::post('quizzes/{quiz}/questions', [QuizQuestionController::class, 'store']);
+Route::get('questions/{question}', [QuizQuestionController::class, 'show']);
+Route::put('questions/{question}', [QuizQuestionController::class, 'update']);
+Route::delete('questions/{question}', [QuizQuestionController::class, 'destroy']);
+
+// Quiz submission (auto-grading) — public (no auth required)
+Route::post('quizzes/{quiz}/submit', QuizSubmitController::class);
+
+// Ranking routes — public (no auth required)
+Route::get('quizzes/{quiz}/rankings', [QuizRankingController::class, 'index']);
+
+// Report routes — public (no auth required)
+Route::get('quizzes/{quiz}/report/pdf', [QuizReportController::class, 'exportPdf']);
+Route::get('quizzes/{quiz}/report/excel', [QuizReportController::class, 'exportExcel']);
+
 // Public poll routes (no auth required)
 Route::get('polls/active', [PollController::class, 'active']);
 Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
@@ -41,6 +63,7 @@ Route::get('polls/{poll}/results', [PollController::class, 'results']);
 Route::get('polls/{poll}', [PollController::class, 'show']);
 Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 
+// Poll routes — authenticated (teacher/admin)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
 
@@ -49,7 +72,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
 
     Route::get('polls/school-active', [PollController::class, 'schoolActive']);
-
     Route::apiResource('polls', PollController::class)->except(['show']);
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
