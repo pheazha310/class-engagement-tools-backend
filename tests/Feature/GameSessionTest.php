@@ -173,12 +173,68 @@ it('returns not found when joining with an invalid code', function () {
         ->assertNotFound();
 });
 
-it('returns not found when joining an ended game session', function () {
-    $session = GameSession::factory()->create([
-        'game_type' => 'poll',
-        'status' => 'ended',
-    ]);
+    it('returns not found when joining an ended game session', function () {
+        $session = GameSession::factory()->create([
+            'game_type' => 'poll',
+            'status' => 'ended',
+        ]);
 
-    $this->getJson("/api/game-sessions/join/{$session->join_code}")
-        ->assertNotFound();
-});
+        $this->getJson("/api/game-sessions/join/{$session->join_code}")
+            ->assertNotFound();
+    });
+
+    it('returns leaderboard ranked by score for an active game session', function () {
+        $session = GameSession::factory()->create(['status' => 'active']);
+
+        postJson("/api/game-sessions/{$session->id}/validate-answer", [
+            'question_id' => '1',
+            'submitted_answer' => '42',
+            'correct_answer' => '42',
+            'participant_name' => 'Alice',
+        ]);
+
+        postJson("/api/game-sessions/{$session->id}/validate-answer", [
+            'question_id' => '2',
+            'submitted_answer' => 'wrong',
+            'correct_answer' => 'correct',
+            'participant_name' => 'Bob',
+        ]);
+
+        postJson("/api/game-sessions/{$session->id}/validate-answer", [
+            'question_id' => '3',
+            'submitted_answer' => 'yes',
+            'correct_answer' => 'yes',
+            'participant_name' => 'Alice',
+        ]);
+
+        $response = $this->getJson("/api/game-sessions/{$session->id}/leaderboard");
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'leaderboard' => [
+                    '*' => ['participantName', 'score'],
+                ],
+            ])
+            ->assertJson([
+                'leaderboard' => [
+                    ['participantName' => 'Alice', 'score' => 20],
+                    ['participantName' => 'Bob', 'score' => 0],
+                ],
+            ]);
+    });
+
+    it('returns not found when fetching leaderboard for an ended game session', function () {
+        $session = GameSession::factory()->create(['status' => 'ended']);
+
+        $this->getJson("/api/game-sessions/{$session->id}/leaderboard")
+            ->assertNotFound();
+    });
+
+    it('returns empty leaderboard when no answers exist', function () {
+        $session = GameSession::factory()->create(['status' => 'active']);
+
+        $response = $this->getJson("/api/game-sessions/{$session->id}/leaderboard");
+
+        $response->assertOk()
+            ->assertJson(['leaderboard' => []]);
+    });

@@ -134,4 +134,32 @@ class GameSessionController extends Controller
             'game_answer' => new GameAnswerResource($answer),
         ], Response::HTTP_OK);
     }
+
+    public function leaderboard(Request $request, GameSession $gameSession): JsonResponse
+    {
+        if (! $gameSession->isActive()) {
+            return response()->json([
+                'message' => 'Game session is not active.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $scores = GameAnswer::where('game_session_id', $gameSession->id)
+            ->selectRaw('COALESCE(participant_name, user_id) as participant_key')
+            ->selectRaw('MAX(participant_name) as participant_name')
+            ->selectRaw('SUM(points_awarded) as score')
+            ->groupBy('participant_key')
+            ->orderByDesc('score')
+            ->orderBy('participant_name')
+            ->get()
+            ->map(fn ($row) => [
+                'participantName' => $row->participant_name,
+                'score' => (int) $row->score,
+            ])
+            ->values()
+            ->all();
+
+        return response()->json([
+            'leaderboard' => $scores,
+        ], Response::HTTP_OK);
+    }
 }
