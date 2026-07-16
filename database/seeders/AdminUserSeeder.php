@@ -16,13 +16,13 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::factory()->create(
+        $admin = User::factory()->firstOrCreate(
+            ['email' => 'admin@example.com'],
             [
-                'email' => 'admin@example.com',
                 'name' => 'Admin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-            ],
+            ]
         );
 
         $admin->syncRoles('admin');

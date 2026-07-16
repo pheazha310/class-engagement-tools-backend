@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 #[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at', 'school_id', 'province_id', 'is_anonymous', 'is_quiz', 'is_open_text', 'max_points'])]
 class Poll extends Model
 {
-    /** @use HasFactory<PollFactory> */
-    use HasFactory;
+    /** @use HasUuids */
+    use HasUuids;
 
     protected function casts(): array
     {

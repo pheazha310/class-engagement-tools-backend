@@ -15,13 +15,15 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(LocationSeeder::class);
 
-        $teacher = User::factory()->create([
-            'email' => 'teacher@example.com',
-            'name' => 'Test Teacher',
-            'role' => 'teacher',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        $teacher = User::factory()->firstOrCreate(
+            ['email' => 'teacher@example.com'],
+            [
+                'name' => 'Test Teacher',
+                'role' => 'teacher',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
 
         $students = User::factory(10)->create([
             'role' => 'student',

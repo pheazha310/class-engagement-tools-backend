@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('votes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('poll_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('option_id')->constrained('poll_options')->cascadeOnDelete();
+            $table->foreignUuid('poll_id')->constrained()->cascadeOnDelete();
+            $table->foreignUuid('option_id')->constrained('poll_options')->cascadeOnDelete();
             $table->foreignUuid('student_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
