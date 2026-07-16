@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Toaster } from 'vue-sonner'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 
@@ -21,6 +22,15 @@ function closeMobile() {
 
 <template>
     <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <!-- Toast notifications -->
+        <Toaster
+            position="top-right"
+            :duration="4000"
+            :close-button="true"
+            :rich-colors="true"
+            class="z-[100]"
+        />
+
         <!-- Sidebar -->
         <AdminSidebar
             :collapsed="sidebarCollapsed"
