@@ -4,7 +4,7 @@ const iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
 
 <template>
     <div class="admin-placeholder">
-        <div class="placeholder-icon" style="background: var(--bg-hover); color: var(--text-secondary);" v-html="iconHtml" />
+        <div class="placeholder-icon bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" v-html="iconHtml" />
         <h2>Settings</h2>
         <p>Configure platform settings, manage integrations, and customize the system to your needs.</p>
     </div>

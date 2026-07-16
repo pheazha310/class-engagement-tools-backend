@@ -1,6 +1,6 @@
 import { createInertiaApp } from '@inertiajs/vue3';
-import { createApp, h } from 'vue';
 import { createPinia } from 'pinia';
+import { createApp, h } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -10,6 +10,7 @@ import adminRouter from '@/router/admin';
 
 // Import the admin dashboard CSS
 import '@/assets/css/admin-dashboard.css';
+import '@/assets/css/admin-login.css';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -18,6 +19,8 @@ createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
+                return null;
+            case name === 'auth/Login':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

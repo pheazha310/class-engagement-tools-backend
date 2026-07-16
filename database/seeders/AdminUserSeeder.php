@@ -16,10 +16,11 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::factory()->create(
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
             [
-                'id' => fake()->uuid(),
                 'name' => 'Admin',
+                'role' => 'admin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ],

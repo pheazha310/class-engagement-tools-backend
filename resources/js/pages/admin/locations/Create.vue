@@ -1,39 +1,48 @@
 <script setup lang="ts">
-import type { useForm } from '@inertiajs/vue3';
-import { Head } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
-import Form from '@/pages/admin/locations/Form.vue';
-import { index as locationsIndex, store } from '@/routes/admin/locations';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { get, post } from '@/services/api'
+import Form from '@/pages/admin/locations/Form.vue'
 
-defineProps<{
-    countries: string[];
-    provinces: { name: string; country: string | null }[];
-}>();
+const router = useRouter()
+const lookupData = ref<{ countries: string[]; provinces: { name: string; country: string | null }[] }>({ countries: [], provinces: [] })
+const loading = ref(true)
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Locations', href: locationsIndex().url },
-            { title: 'Create', href: '' },
-        ],
-    },
-});
+onMounted(async () => {
+    const res = await get<{ countries: string[]; provinces: { name: string; country: string | null }[] }>('/api/admin/locations/lookup/data')
+    if (res.data) lookupData.value = res.data
+    loading.value = false
+})
 
-const onSubmit = (form: ReturnType<typeof useForm>) => {
-    form.post(store().url);
-};
+async function onSubmit(data: { school_name: string; country: string; province: string }) {
+    const res = await post('/api/admin/locations', data)
+    if (!res.error) {
+        router.push('/admin/dashboard/school-names')
+    } else {
+        alert(res.error)
+    }
+}
 </script>
 
 <template>
-    <Head title="Create location" />
+    <div>
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Add School Name</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Register a new school name</p>
+        </div>
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4">
-        <Heading title="Create location" description="Add a new school location" />
+        <div v-if="loading" class="flex items-center gap-2 py-4 text-sm text-gray-400">
+            <div class="w-4 h-4 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+            Loading lookup data...
+        </div>
+
         <Form
-            :countries="countries"
-            :provinces="provinces"
-            submit-label="Create location"
+            v-else
+            :countries="lookupData.countries"
+            :provinces="lookupData.provinces"
+            submit-label="Create School Name"
             @submit="onSubmit"
+            @cancel="router.push('/admin/dashboard/school-names')"
         />
     </div>
 </template>

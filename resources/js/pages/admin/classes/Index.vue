@@ -4,7 +4,7 @@ const iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
 
 <template>
     <div class="admin-placeholder">
-        <div class="placeholder-icon" style="background: var(--color-warning-light); color: var(--color-warning);" v-html="iconHtml" />
+        <div class="placeholder-icon bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" v-html="iconHtml" />
         <h2>Class Management</h2>
         <p>Create and manage classes, assign teachers, and track student progress and engagement.</p>
     </div>

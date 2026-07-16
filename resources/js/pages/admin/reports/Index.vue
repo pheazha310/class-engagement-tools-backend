@@ -4,7 +4,7 @@ const iconHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
 
 <template>
     <div class="admin-placeholder">
-        <div class="placeholder-icon" style="background: var(--color-info-light); color: var(--color-info);" v-html="iconHtml" />
+        <div class="placeholder-icon bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400" v-html="iconHtml" />
         <h2>Reports</h2>
         <p>View detailed analytics and generate reports on platform usage, user engagement, and academic performance.</p>
     </div>

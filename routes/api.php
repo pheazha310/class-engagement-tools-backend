@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\LocationController as AdminLocationController;
+use App\Http\Controllers\Api\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
@@ -84,8 +86,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('users/{user}', [AdminUserController::class, 'show']);
         Route::put('users/{user}', [AdminUserController::class, 'update']);
         Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
-        Route::get('roles', [AdminUserController::class, 'roles']);
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
+
+        Route::get('locations', [AdminLocationController::class, 'index']);
+        Route::post('locations', [AdminLocationController::class, 'store']);
+        Route::get('locations/{location}', [AdminLocationController::class, 'show']);
+        Route::put('locations/{location}', [AdminLocationController::class, 'update']);
+        Route::delete('locations/{location}', [AdminLocationController::class, 'destroy']);
+        Route::get('locations/lookup/data', [AdminLocationController::class, 'lookupData']);
+
+        Route::get('roles', [AdminRoleController::class, 'index']);
+        Route::post('roles', [AdminRoleController::class, 'store']);
+        Route::get('roles/{role}', [AdminRoleController::class, 'show']);
+        Route::put('roles/{role}', [AdminRoleController::class, 'update']);
+        Route::delete('roles/{role}', [AdminRoleController::class, 'destroy']);
+        Route::get('roles/permissions/all', [AdminRoleController::class, 'permissions']);
     });
 });
 

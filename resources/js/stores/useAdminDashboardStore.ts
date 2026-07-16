@@ -112,10 +112,10 @@ const mockActivities: RecentActivity[] = [
 ]
 
 const mockNotifications: Notification[] = [
-    { id: 1, text: '<strong>Sok Chan</strong> just registered as a new student', time: '2 min ago', icon: '👤', iconBg: 'var(--color-primary-light)' },
-    { id: 2, text: '<strong>Hun Kim</strong> created a new school', time: '15 min ago', icon: '🏫', iconBg: 'var(--color-success-light)' },
-    { id: 3, text: '<strong>System</strong> completed daily backup successfully', time: '30 min ago', icon: '✅', iconBg: 'var(--color-info-light)' },
-    { id: 4, text: '<strong>3 new reports</strong> are ready for review', time: '1 hour ago', icon: '📊', iconBg: 'var(--color-warning-light)' },
+    { id: 1, text: '<strong>Sok Chan</strong> just registered as a new student', time: '2 min ago', icon: '👤', iconBg: '#eef2ff' },
+    { id: 2, text: '<strong>Hun Kim</strong> created a new school', time: '15 min ago', icon: '🏫', iconBg: '#ecfdf5' },
+    { id: 3, text: '<strong>System</strong> completed daily backup successfully', time: '30 min ago', icon: '✅', iconBg: '#eff6ff' },
+    { id: 4, text: '<strong>3 new reports</strong> are ready for review', time: '1 hour ago', icon: '📊', iconBg: '#fffbeb' },
 ]
 
 const mockQuickActions: QuickAction[] = [

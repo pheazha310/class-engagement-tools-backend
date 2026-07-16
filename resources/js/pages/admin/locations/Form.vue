@@ -1,104 +1,90 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import InputError from '@/components/InputError.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { ref, computed } from 'vue'
 
 type ProvinceObject = {
-    name: string;
-    country: string | null;
-};
+    name: string
+    country: string | null
+}
 
 const props = defineProps<{
-    countries: string[];
-    provinces: ProvinceObject[];
+    countries: string[]
+    provinces: ProvinceObject[]
     location?: {
-        id: number;
-        country: string;
-        province: string;
-        school_name: string;
-    };
-    submitLabel: string;
-}>();
+        id: number
+        country: string
+        province: string
+        school_name: string
+    }
+    submitLabel: string
+}>()
 
 const emit = defineEmits<{
-    (e: 'submit', form: ReturnType<typeof useForm>): void;
-}>();
+    submit: [data: { school_name: string; country: string; province: string }]
+    cancel: []
+}>()
 
-const form = useForm({
+const form = ref({
     country: props.location?.country ?? '',
     province: props.location?.province ?? '',
     school_name: props.location?.school_name ?? '',
-});
+})
 
 const filteredProvinces = computed(() =>
-    props.provinces.filter((p) => p.country === form.country),
-);
+    props.provinces.filter((p) => p.country === form.value.country),
+)
 
-const submit = () => emit('submit', form);
+function submit() {
+    emit('submit', {
+        school_name: form.value.school_name,
+        country: form.value.country,
+        province: form.value.province,
+    })
+}
 </script>
 
 <template>
-    <form class="max-w-xl space-y-6" @submit.prevent="submit">
-        <div class="grid gap-2">
-            <Label for="country">Country</Label>
-            <Select v-model="form.country" name="country">
-                <SelectTrigger>
-                    <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem
-                        v-for="country in countries"
-                        :key="country"
-                        :value="country"
-                    >
-                        {{ country }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
-            <InputError :message="form.errors.country" />
-        </div>
+    <div class="max-w-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <form @submit.prevent="submit" class="space-y-5">
+            <div class="grid gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Country</label>
+                <select
+                    v-model="form.country"
+                    class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                >
+                    <option value="" disabled>Select a country</option>
+                    <option v-for="country in countries" :key="country" :value="country">{{ country }}</option>
+                </select>
+            </div>
 
-        <div class="grid gap-2">
-            <Label for="province">Province</Label>
-            <Select
-                v-model="form.province"
-                name="province"
-                :disabled="!form.country"
-            >
-                <SelectTrigger>
-                    <SelectValue :placeholder="form.country ? 'Select a province' : 'Select a country first'" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem
-                        v-for="province in filteredProvinces"
-                        :key="province.name"
-                        :value="province.name"
-                    >
-                        {{ province.name }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
-            <InputError :message="form.errors.province" />
-        </div>
+            <div class="grid gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Province</label>
+                <select
+                    v-model="form.province"
+                    :disabled="!form.country"
+                    class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 disabled:opacity-50"
+                >
+                    <option value="" disabled>{{ form.country ? 'Select a province' : 'Select a country first' }}</option>
+                    <option v-for="province in filteredProvinces" :key="province.name" :value="province.name">{{ province.name }}</option>
+                </select>
+            </div>
 
-        <div class="grid gap-2">
-            <Label for="school_name">School Name</Label>
-            <Input id="school_name" v-model="form.school_name" required />
-            <InputError :message="form.errors.school_name" />
-        </div>
+            <div class="grid gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">School Name</label>
+                <input
+                    v-model="form.school_name"
+                    required
+                    class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                />
+            </div>
 
-        <div class="flex gap-2">
-            <Button type="submit" :disabled="form.processing">{{ submitLabel }}</Button>
-        </div>
-    </form>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    {{ submitLabel }}
+                </button>
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 transition-colors" @click="emit('cancel')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
 </template>

@@ -1,31 +1,47 @@
 <script setup lang="ts">
-import type { useForm } from '@inertiajs/vue3';
-import { Head } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
-import Form from '@/pages/admin/roles/Form.vue';
-import { index as rolesIndex, store } from '@/routes/admin/roles';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { get, post } from '@/services/api'
+import Form from '@/pages/admin/roles/Form.vue'
 
-defineProps<{ permissions: string[] }>();
+const router = useRouter()
+const permissions = ref<string[]>([])
+const loading = ref(true)
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Roles', href: rolesIndex().url },
-            { title: 'Create', href: '' },
-        ],
-    },
-});
+onMounted(async () => {
+    const res = await get<string[]>('/api/admin/roles/permissions/all')
+    if (res.data) permissions.value = res.data
+    loading.value = false
+})
 
-const onSubmit = (form: ReturnType<typeof useForm>) => {
-    form.post(store().url);
-};
+async function onSubmit(data: { name: string; permissions: string[] }) {
+    const res = await post('/api/admin/roles', data)
+    if (!res.error) {
+        router.push('/admin/dashboard/roles')
+    } else {
+        alert(res.error)
+    }
+}
 </script>
 
 <template>
-    <Head title="Create role" />
+    <div>
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Create Role</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Define a new role and its permissions</p>
+        </div>
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4">
-        <Heading title="Create role" description="Define a role and its permissions" />
-        <Form :permissions="permissions" submit-label="Create role" @submit="onSubmit" />
+        <div v-if="loading" class="flex items-center gap-2 py-4 text-sm text-gray-400">
+            <div class="w-4 h-4 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+            Loading permissions...
+        </div>
+
+        <Form
+            v-else
+            :permissions="permissions"
+            submit-label="Create Role"
+            @submit="onSubmit"
+            @cancel="router.push('/admin/dashboard/roles')"
+        />
     </div>
 </template>

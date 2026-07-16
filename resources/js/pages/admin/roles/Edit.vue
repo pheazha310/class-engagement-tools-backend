@@ -1,39 +1,57 @@
 <script setup lang="ts">
-import type { useForm } from '@inertiajs/vue3';
-import { Head } from '@inertiajs/vue3';
-import Heading from '@/components/Heading.vue';
-import Form from '@/pages/admin/roles/Form.vue';
-import { index as rolesIndex, update } from '@/routes/admin/roles';
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { get, put } from '@/services/api'
+import Form from '@/pages/admin/roles/Form.vue'
 
-const props = defineProps<{
-    role: { id: number; name: string; permissions: string[]; is_protected: boolean };
-    permissions: string[];
-}>();
+const route = useRoute()
+const router = useRouter()
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Roles', href: rolesIndex().url },
-            { title: 'Edit', href: '' },
-        ],
-    },
-});
+const role = ref<{ id: number; name: string; permissions: string[]; is_protected: boolean } | null>(null)
+const permissions = ref<string[]>([])
+const loading = ref(true)
 
-const onSubmit = (form: ReturnType<typeof useForm>) => {
-    form.put(update(props.role.id).url);
-};
+onMounted(async () => {
+    const [roleRes, permsRes] = await Promise.all([
+        get<any>(`/api/admin/roles/${route.params.id}`),
+        get<string[]>('/api/admin/roles/permissions/all'),
+    ])
+    if (roleRes.data) role.value = roleRes.data
+    if (permsRes.data) permissions.value = permsRes.data
+    loading.value = false
+})
+
+async function onSubmit(data: { name: string; permissions: string[] }) {
+    const res = await put(`/api/admin/roles/${route.params.id}`, data)
+    if (!res.error) {
+        router.push('/admin/dashboard/roles')
+    } else {
+        alert(res.error)
+    }
+}
 </script>
 
 <template>
-    <Head :title="`Edit ${role.name} role`" />
+    <div>
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Role</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" v-if="role">Adjust permissions for {{ role.name }}</p>
+        </div>
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4">
-        <Heading title="Edit role" :description="`Adjust permissions for ${role.name}`" />
+        <div v-if="loading" class="flex items-center gap-2 py-4 text-sm text-gray-400">
+            <div class="w-4 h-4 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+            Loading role data...
+        </div>
+
         <Form
-            :role="role"
+            v-else-if="role"
             :permissions="permissions"
-            submit-label="Save changes"
+            :role="role"
+            submit-label="Save Changes"
             @submit="onSubmit"
+            @cancel="router.push('/admin/dashboard/roles')"
         />
+
+        <div v-else class="text-center py-10 text-gray-400">Role not found.</div>
     </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
-import { Shield, Mail, Lock, Eye, EyeOff } from '@lucide/vue';
+import { Shield, Mail, Lock, Eye, EyeOff, CheckCircle2, Building2 } from '@lucide/vue';
+import { ref, onMounted } from 'vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -12,142 +12,214 @@ import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
-defineOptions({
-    layout: {
-        title: 'Enterprise Admin',
-        description: 'Secure Institutional Gateway',
-    },
-});
-
 const showPassword = ref(false);
+const isLoaded = ref(false);
 
 defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
+
+onMounted(() => {
+    requestAnimationFrame(() => {
+        isLoaded.value = true;
+    });
+});
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head title="Admin Login" />
 
-    <div
-        v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
-    >
-        {{ status }}
-    </div>
-
-    <div class="flex flex-col items-center">
-        <!-- Shield Icon -->
-        <div class="mb-8 flex h-20 w-20 items-center justify-center rounded-xl bg-blue-600 shadow-lg">
-            <Shield class="h-12 w-12 text-white" />
+    <div class="admin-login-page">
+        <div class="admin-login-bg-glows" aria-hidden="true">
+            <div class="admin-login-bg-glow admin-login-bg-glow--1" />
+            <div class="admin-login-bg-glow admin-login-bg-glow--2" />
+            <div class="admin-login-bg-glow admin-login-bg-glow--3" />
         </div>
 
-        <!-- Title -->
-        <h1 class="mb-2 text-4xl font-bold text-gray-900 tracking-tight">Enterprise Admin</h1>
-        <p class="mb-10 text-base text-gray-600 font-medium">Secure Institutional Gateway</p>
-
-        <Form
-            v-bind="store.form()"
-            :reset-on-success="['password']"
-            v-slot="{ errors, processing }"
-            class="w-full space-y-6"
-        >
-            <!-- Email Field -->
-            <div class="space-y-6">
-                <div class="space-y-2">
-                    <Label for="email" class="text-sm font-semibold text-gray-700">
-                        Email Address
-                    </Label>
-                    <div class="relative">
-                        <Mail class="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
-                        <Input
-                            id="email"
-                            type="email"
-                            name="email"
-                            required
-                            autofocus
-                            :tabindex="1"
-                            autocomplete="email"
-                            placeholder="admin@example.com"
-                            class="pl-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                        />
-                    </div>
-                    <InputError :message="errors.email" />
+        <div class="admin-login-main">
+            <!-- LEFT PANEL -->
+            <div class="admin-login-left">
+                <div class="admin-login-left-pattern" />
+                <div class="admin-login-left-glows">
+                    <div class="admin-login-left-glow admin-login-left-glow--1" />
+                    <div class="admin-login-left-glow admin-login-left-glow--2" />
+                    <div class="admin-login-left-glow admin-login-left-glow--3" />
+                </div>
+                <div class="admin-login-particles" aria-hidden="true">
+                    <div class="admin-login-particle admin-login-particle--1" />
+                    <div class="admin-login-particle admin-login-particle--2" />
+                    <div class="admin-login-particle admin-login-particle--3" />
+                    <div class="admin-login-particle admin-login-particle--4" />
+                    <div class="admin-login-particle admin-login-particle--5" />
+                    <div class="admin-login-particle admin-login-particle--6" />
                 </div>
 
-                <!-- Password Field -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password" class="text-sm font-semibold text-gray-700">
-                            Password
-                        </Label>
-                        <TextLink
-                            v-if="canResetPassword"
-                            :href="request()"
-                            class="text-sm font-medium text-blue-600 hover:text-blue-700"
-                            :tabindex="5"
-                        >
-                            Forgot Password?
-                        </TextLink>
+                <div class="admin-login-left-content">
+                    <div class="admin-login-fade admin-login-fade--delay-75" :class="{ 'admin-login-fade--visible': isLoaded }">
+                        <div class="admin-login-branding">
+                            <div class="admin-login-branding-icon">
+                                <Building2 />
+                            </div>
+                            <span class="admin-login-branding-text">Enterprise</span>
+                        </div>
                     </div>
-                    <div class="relative">
-                        <Lock class="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
-                        <Input
-                            id="password"
-                            :type="showPassword ? 'text' : 'password'"
-                            name="password"
-                            required
-                            :tabindex="2"
-                            autocomplete="current-password"
-                            placeholder="password"
-                            class="pl-10 pr-10 h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                        />
-                        <button
-                            type="button"
-                            @click="showPassword = !showPassword"
-                            class="absolute right-3 top-3.5 text-gray-500 hover:text-gray-700"
-                            :tabindex="-1"
-                        >
-                            <EyeOff v-if="showPassword" class="h-5 w-5" />
-                            <Eye v-else class="h-5 w-5" />
-                        </button>
+
+                    <div class="admin-login-hero">
+                        <div class="admin-login-shield-wrapper admin-login-scale" :class="{ 'admin-login-scale--visible': isLoaded }">
+                            <div class="admin-login-shield-glow" />
+                            <div class="admin-login-shield-box">
+                                <Shield />
+                            </div>
+                        </div>
+
+                        <h1 class="admin-login-hero-title admin-login-fade admin-login-fade--delay-200" :class="{ 'admin-login-fade--visible': isLoaded }">
+                            Enterprise Security
+                        </h1>
+
+                        <p class="admin-login-hero-subtitle admin-login-fade admin-login-fade--delay-300" :class="{ 'admin-login-fade--visible': isLoaded }">
+                            Trusted administration for educational institutions.
+                        </p>
+
+                        <p class="admin-login-hero-desc admin-login-fade admin-login-fade--delay-400" :class="{ 'admin-login-fade--visible': isLoaded }">
+                            Secure access with enterprise-grade authentication, encrypted communication, and advanced monitoring.
+                        </p>
                     </div>
-                    <InputError :message="errors.password" />
-                </div>
 
-                <!-- Remember Me Checkbox -->
-                <div class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" :tabindex="3" class="border-2 border-gray-300" />
-                    <Label for="remember" class="text-sm font-medium text-gray-700 cursor-pointer">
-                        Keep me signed in
-                    </Label>
+                    <div class="admin-login-left-footer admin-login-fade admin-login-fade--delay-500" :class="{ 'admin-login-fade--visible': isLoaded }">
+                        <Shield />
+                        <span>Protected by enterprise-grade security</span>
+                    </div>
                 </div>
-
-                <!-- Sign In Button -->
-                <Button
-                    type="submit"
-                    class="w-full h-12 bg-blue-600 text-base font-semibold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200"
-                    :tabindex="4"
-                    :disabled="processing"
-                    data-test="login-button"
-                >
-                    <Spinner v-if="processing" class="mr-2" />
-                    <span class="flex items-center justify-center gap-2">
-                        Sign In
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                    </span>
-                </Button>
             </div>
-        </Form>
+
+            <!-- RIGHT PANEL -->
+            <div class="admin-login-right">
+                <div class="admin-login-card-wrapper admin-login-slide-up" :class="{ 'admin-login-slide-up--visible': isLoaded }">
+                    <div class="admin-login-card">
+                        <div v-if="status" class="admin-login-status">
+                            <CheckCircle2 />
+                            {{ status }}
+                        </div>
+
+                        <div class="admin-login-card-icon">
+                            <div class="admin-login-card-icon-box">
+                                <Shield />
+                            </div>
+                        </div>
+
+                        <div class="admin-login-card-header">
+                            <h1 class="admin-login-card-title">Enterprise Admin</h1>
+                            <p class="admin-login-card-subtitle">Secure Institutional Gateway</p>
+                        </div>
+
+                        <Form v-bind="store.form()" :reset-on-success="['password']" v-slot="{ errors, processing }" class="admin-login-form">
+                            <div class="admin-login-field">
+                                <Label for="email" class="admin-login-label">Email Address</Label>
+                                <div class="admin-login-input-group">
+                                    <Mail class="admin-login-input-icon" />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        name="email"
+                                        required
+                                        autofocus
+                                        :tabindex="1"
+                                        autocomplete="email"
+                                        placeholder="admin@example.com"
+                                        aria-label="Email Address"
+                                        class="admin-login-input admin-login-input--email"
+                                    />
+                                </div>
+                                <InputError :message="errors.email" class="admin-login-input-error" />
+                            </div>
+
+                            <div class="admin-login-field">
+                                <div class="admin-login-password-header">
+                                    <Label for="password" class="admin-login-label">Password</Label>
+                                    <TextLink
+                                        v-if="canResetPassword"
+                                        :href="request()"
+                                        class="admin-login-forgot"
+                                        :tabindex="5"
+                                    >
+                                        Forgot Password?
+                                    </TextLink>
+                                </div>
+                                <div class="admin-login-input-group">
+                                    <Lock class="admin-login-input-icon" />
+                                    <Input
+                                        id="password"
+                                        :type="showPassword ? 'text' : 'password'"
+                                        name="password"
+                                        required
+                                        :tabindex="2"
+                                        autocomplete="current-password"
+                                        placeholder="Enter your password"
+                                        aria-label="Password"
+                                        class="admin-login-input admin-login-input--password"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="showPassword = !showPassword"
+                                        class="admin-login-toggle-pw"
+                                        :tabindex="-1"
+                                        :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                                    >
+                                        <EyeOff v-if="showPassword" />
+                                        <Eye v-else />
+                                    </button>
+                                </div>
+                                <InputError :message="errors.password" class="admin-login-input-error" />
+                            </div>
+
+                            <div class="admin-login-remember">
+                                <Checkbox
+                                    id="remember"
+                                    name="remember"
+                                    :tabindex="3"
+                                    class="admin-login-checkbox"
+                                />
+                                <Label for="remember" class="admin-login-remember-label">
+                                    Keep me signed in
+                                </Label>
+                            </div>
+
+                            <div class="admin-login-submit-wrapper">
+                                <Button
+                                    type="submit"
+                                    class="admin-login-submit"
+                                    :tabindex="4"
+                                    :disabled="processing"
+                                    data-test="login-button"
+                                    aria-label="Sign in to your account"
+                                >
+                                    <Spinner v-if="processing" class="admin-login-submit-spinner" />
+                                    <span v-else class="admin-login-submit-content">
+                                        Sign In
+                                        <svg class="admin-login-submit-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                    </span>
+                                </Button>
+                                <div class="admin-login-submit-glow" />
+                            </div>
+                        </Form>
+                    </div>
+
+                    <div class="admin-login-card-footer">
+                        <div class="admin-login-divider">
+                            <div class="admin-login-divider-line admin-login-divider-line--left" />
+                            <Shield class="admin-login-divider-icon" />
+                            <div class="admin-login-divider-line admin-login-divider-line--right" />
+                        </div>
+                        <p class="admin-login-footer-text">
+                            Secure access for authorized administrators only<br class="admin-login-br" />
+                            Protected by enterprise-grade security
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
-
-<style scoped>
-/* Ensure the form is centered and has proper spacing */
-:deep(.space-y-6 > * + *) {
-    margin-top: 1.5rem;
-}
-</style>

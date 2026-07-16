@@ -11,7 +11,6 @@ const store = useAdminDashboardStore()
 const router = useRouter()
 const { resolvedAppearance } = useAppearance()
 
-// ---- Date/Time ----
 const currentDate = ref('')
 const currentTime = ref('')
 const welcomeMessage = computed(() => {
@@ -37,7 +36,7 @@ function updateDateTime() {
     })
 }
 
-// ---- Chart.js ----
+// Chart.js
 const userChartCanvas = ref<HTMLCanvasElement | null>(null)
 const activityChartCanvas = ref<HTMLCanvasElement | null>(null)
 let userChart: any = null
@@ -157,12 +156,10 @@ onUnmounted(() => {
     }
 })
 
-// Watch for theme changes to re-render charts
 watch(resolvedAppearance, () => {
     setTimeout(() => initCharts(), 100)
 })
 
-// Dismiss error banner
 function dismissError() {
     store.clearError()
 }
@@ -170,8 +167,8 @@ function dismissError() {
 
 <template>
     <div>
-        <!-- Error Banner (shown when API fails) -->
-        <div v-if="store.error" class="flex items-center gap-2.5 px-4 py-3 mb-5 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm font-medium animate-slideDown dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+        <!-- Error Banner -->
+        <div v-if="store.error" class="flex items-center gap-2.5 px-4 py-3 mb-6 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm font-medium animate-slideDown dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>Could not load live data. Showing cached data instead.</span>
             <button class="ml-auto w-6 h-6 flex items-center justify-center rounded text-red-500 opacity-60 hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all" @click="dismissError">
@@ -180,13 +177,13 @@ function dismissError() {
         </div>
 
         <!-- Loading Overlay -->
-        <div v-if="store.isLoading" class="flex items-center gap-2.5 py-2 mb-3 text-sm text-gray-400 dark:text-gray-500">
+        <div v-if="store.isLoading" class="flex items-center gap-2.5 py-2 mb-4 text-sm text-gray-400 dark:text-gray-500">
             <div class="w-4 h-4 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin dark:border-gray-700 dark:border-t-blue-400"></div>
             <span>Loading dashboard data...</span>
         </div>
 
         <!-- Dashboard Header -->
-        <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex flex-col gap-4 mb-7 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Dashboard</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ welcomeMessage }}, {{ store.currentUser.name }}! Here&rsquo;s what&rsquo;s happening today.</p>
@@ -198,48 +195,48 @@ function dismissError() {
         </div>
 
         <!-- Statistics Cards -->
-        <div class="stat-cards-grid">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
             <StatCard v-for="card in store.statsCards" :key="card.id" :card="card" />
         </div>
 
         <!-- Charts Section -->
-        <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <h3>User Registration Overview</h3>
-                    <div class="chart-period">
-                        <button class="active">Yearly</button>
-                        <button>Monthly</button>
-                        <button>Weekly</button>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">User Registration Overview</h3>
+                    <div class="flex gap-1">
+                        <button class="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 rounded-md">Yearly</button>
+                        <button class="px-2.5 py-1 text-xs font-medium text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Monthly</button>
+                        <button class="px-2.5 py-1 text-xs font-medium text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Weekly</button>
                     </div>
                 </div>
-                <div class="chart-card-body">
+                <div class="p-5 min-h-[280px] flex items-center justify-center">
                     <canvas ref="userChartCanvas" style="width: 100%; height: 260px;"></canvas>
                 </div>
             </div>
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <h3>Platform Activity Overview</h3>
-                    <div class="chart-period">
-                        <button class="active">Weekly</button>
-                        <button>Monthly</button>
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Platform Activity Overview</h3>
+                    <div class="flex gap-1">
+                        <button class="px-2.5 py-1 text-xs font-medium text-white bg-blue-600 rounded-md">Weekly</button>
+                        <button class="px-2.5 py-1 text-xs font-medium text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Monthly</button>
                     </div>
                 </div>
-                <div class="chart-card-body">
+                <div class="p-5 min-h-[280px] flex items-center justify-center">
                     <canvas ref="activityChartCanvas" style="width: 100%; height: 260px;"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- Bottom Grid: Recent Activity + Quick Actions -->
-        <div class="bottom-grid">
-            <!-- Recent Activity -->
-            <div class="activity-card">
-                <div class="activity-card-header">
-                    <h3>Recent Activity</h3>
-                    <a href="#">View all</a>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <!-- Recent Activity (spans 2 cols) -->
+            <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Recent Activity</h3>
+                    <a href="#" class="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">View all</a>
                 </div>
-                <div class="activity-list">
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
                     <ActivityCard
                         v-for="activity in store.recentActivities"
                         :key="activity.id"
@@ -249,11 +246,11 @@ function dismissError() {
             </div>
 
             <!-- Quick Actions -->
-            <div class="quick-actions-card">
-                <div class="quick-actions-header">
-                    <h3>Quick Actions</h3>
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Quick Actions</h3>
                 </div>
-                <div class="quick-actions-grid">
+                <div class="grid grid-cols-2 gap-3 p-5">
                     <QuickActionCard
                         v-for="action in store.quickActions"
                         :key="action.id"

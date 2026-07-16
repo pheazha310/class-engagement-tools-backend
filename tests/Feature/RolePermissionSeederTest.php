@@ -15,23 +15,23 @@ it('creates the admin, teacher, and student roles', function () {
 });
 
 it('grants every permission to the admin role', function () {
-    $admin = Role::findByName('admin');
+    $admin = Role::findByName('admin', 'web');
 
     expect($admin->permissions()->count())->toBe(Permission::count());
 });
 
 it('grants teachers a scoped subset of permissions', function () {
-    $teacher = Role::findByName('teacher');
+    $teacher = Role::findByName('teacher', 'web');
 
-    expect($teacher->hasPermissionTo('manage classes'))->toBeTrue();
-    expect($teacher->hasPermissionTo('manage users'))->toBeFalse();
+    expect($teacher->hasPermissionTo('manage classes', 'web'))->toBeTrue();
+    expect($teacher->hasPermissionTo('manage users', 'web'))->toBeFalse();
 });
 
 it('grants students only their own permissions', function () {
-    $student = Role::findByName('student');
+    $student = Role::findByName('student', 'web');
 
-    expect($student->hasPermissionTo('join engagements'))->toBeTrue();
-    expect($student->hasPermissionTo('manage classes'))->toBeFalse();
+    expect($student->hasPermissionTo('join engagements', 'web'))->toBeTrue();
+    expect($student->hasPermissionTo('manage classes', 'web'))->toBeFalse();
 });
 
 it('is idempotent and does not duplicate roles or permissions', function () {
