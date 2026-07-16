@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ScoreUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGameSessionRequest;
 use App\Http\Requests\ValidateGameAnswerRequest;
@@ -108,9 +109,28 @@ class GameSessionController extends Controller
             'participant_name' => $data['participant_name'] ?? ($user?->name ?? null),
         ]);
 
+        $participantId = $user?->id ?? $data['participant_name'] ?? null;
+        $participantName = $data['participant_name'] ?? ($user?->name ?? 'Anonymous');
+        $totalScore = GameAnswer::where('game_session_id', $gameSession->id)
+            ->when($user, fn ($query) => $query->where('user_id', $user->id))
+            ->when(! $user && ($data['participant_name'] ?? false), fn ($query) => $query->where('participant_name', $data['participant_name']))
+            ->sum('points_awarded');
+
+        broadcast(new ScoreUpdated(
+            gameSessionId: $gameSession->id,
+            participantId: $participantId,
+            participantName: $participantName,
+            score: $totalScore,
+            pointsAwarded: $pointsAwarded,
+            isCorrect: $isCorrect,
+            questionId: $data['question_id'] ?? null,
+        ))->toOthers();
+
         return response()->json([
             'is_correct' => $isCorrect,
             'points_awarded' => $pointsAwarded,
+            'total_score' => $totalScore,
+            'score' => $totalScore,
             'game_answer' => new GameAnswerResource($answer),
         ], Response::HTTP_OK);
     }

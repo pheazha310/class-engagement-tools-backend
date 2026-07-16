@@ -1,7 +1,9 @@
 <?php
 
+use App\Events\ScoreUpdated;
 use App\Models\GameSession;
 use App\Models\User;
+use Illuminate\Support\Facades\Event;
 
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\postJson;
@@ -149,4 +151,47 @@ it('stores the answer for an unauthenticated guest with a participant name', fun
         'participant_name' => 'Guest Player',
         'is_correct' => true,
     ]);
+});
+
+it('broadcasts ScoreUpdated event when a correct answer is submitted', function () {
+    Event::fake([ScoreUpdated::class]);
+
+    $session = GameSession::factory()->create(['status' => 'active']);
+
+    postJson("/api/game-sessions/{$session->id}/validate-answer", [
+        'question_id' => '1',
+        'submitted_answer' => '42',
+        'correct_answer' => '42',
+        'participant_name' => 'Alice',
+    ]);
+
+    Event::assertDispatched(ScoreUpdated::class, function ($event) use ($session) {
+        return $event->gameSessionId === $session->id
+            && $event->participantName === 'Alice'
+            && $event->score === 10
+            && $event->pointsAwarded === 10
+            && $event->isCorrect === true
+            && $event->questionId === '1';
+    });
+});
+
+it('broadcasts ScoreUpdated with zero points for an incorrect answer', function () {
+    Event::fake([ScoreUpdated::class]);
+
+    $session = GameSession::factory()->create(['status' => 'active']);
+
+    postJson("/api/game-sessions/{$session->id}/validate-answer", [
+        'question_id' => '1',
+        'submitted_answer' => 'wrong',
+        'correct_answer' => 'correct',
+        'participant_name' => 'Bob',
+    ]);
+
+    Event::assertDispatched(ScoreUpdated::class, function ($event) use ($session) {
+        return $event->gameSessionId === $session->id
+            && $event->participantName === 'Bob'
+            && $event->score === 0
+            && $event->pointsAwarded === 0
+            && $event->isCorrect === false;
+    });
 });
