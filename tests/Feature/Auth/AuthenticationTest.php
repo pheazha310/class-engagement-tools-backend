@@ -1,17 +1,25 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
 
-    $response->assertOk();
+    $response->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('auth/Login')
+        ->has('canResetPassword')
+    );
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    $this->seed(RolePermissionSeeder::class);
+
+    $user = User::factory()->create(['role' => 'admin']);
+    $user->assignRole('admin');
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -19,18 +27,35 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
+});
+
+test('non-admin users can not authenticate using the admin login screen', function () {
+    $this->seed(RolePermissionSeeder::class);
+
+    $user = User::factory()->create(['role' => 'student']);
+    $user->assignRole('student');
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('login'));
+
+    $this->assertGuest();
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    $this->seed(RolePermissionSeeder::class);
 
     Features::twoFactorAuthentication([
         'confirm' => true,
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->withTwoFactor()->create();
+    $user = User::factory()->withTwoFactor()->create(['role' => 'admin']);
+    $user->assignRole('admin');
 
     $response = $this->post(route('login'), [
         'email' => $user->email,

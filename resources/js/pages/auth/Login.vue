@@ -28,7 +28,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Admin Login" />
+    <Head title="Administrator sign in" />
 
     <div class="admin-login-page">
         <div class="admin-login-bg-glows" aria-hidden="true">
@@ -61,7 +61,7 @@ onMounted(() => {
                             <div class="admin-login-branding-icon">
                                 <Building2 />
                             </div>
-                            <span class="admin-login-branding-text">Enterprise</span>
+                            <span class="admin-login-branding-text">Class Engage</span>
                         </div>
                     </div>
 
@@ -74,21 +74,21 @@ onMounted(() => {
                         </div>
 
                         <h1 class="admin-login-hero-title admin-login-fade admin-login-fade--delay-200" :class="{ 'admin-login-fade--visible': isLoaded }">
-                            Enterprise Security
+                            Class Engage Admin
                         </h1>
 
                         <p class="admin-login-hero-subtitle admin-login-fade admin-login-fade--delay-300" :class="{ 'admin-login-fade--visible': isLoaded }">
-                            Trusted administration for educational institutions.
+                            Manage your school community with confidence.
                         </p>
 
                         <p class="admin-login-hero-desc admin-login-fade admin-login-fade--delay-400" :class="{ 'admin-login-fade--visible': isLoaded }">
-                            Secure access with enterprise-grade authentication, encrypted communication, and advanced monitoring.
+                            Secure access for the people who keep classes connected, active, and running smoothly.
                         </p>
                     </div>
 
                     <div class="admin-login-left-footer admin-login-fade admin-login-fade--delay-500" :class="{ 'admin-login-fade--visible': isLoaded }">
                         <Shield />
-                        <span>Protected by enterprise-grade security</span>
+                            <span>Secure administration for your school</span>
                     </div>
                 </div>
             </div>
@@ -109,8 +109,8 @@ onMounted(() => {
                         </div>
 
                         <div class="admin-login-card-header">
-                            <h1 class="admin-login-card-title">Enterprise Admin</h1>
-                            <p class="admin-login-card-subtitle">Secure Institutional Gateway</p>
+                            <h1 class="admin-login-card-title">Welcome back</h1>
+                            <p class="admin-login-card-subtitle">Sign in to your administrator workspace</p>
                         </div>
 
                         <Form v-bind="store.form()" :reset-on-success="['password']" v-slot="{ errors, processing }" class="admin-login-form">
@@ -214,8 +214,8 @@ onMounted(() => {
                             <div class="admin-login-divider-line admin-login-divider-line--right" />
                         </div>
                         <p class="admin-login-footer-text">
-                            Secure access for authorized administrators only<br class="admin-login-br" />
-                            Protected by enterprise-grade security
+                            Access is limited to authorized administrators<br class="admin-login-br" />
+                            Your session is protected and encrypted
                         </p>
                     </div>
                 </div>
