@@ -115,7 +115,7 @@ async function executeDelete() {
         deleteTarget.value = null
         fetchUsers(pagination.value.current_page)
     } else {
-        toast.error(response.error)
+        toast.error(response.error.message || 'Failed to delete user')
     }
 }
 
@@ -161,6 +161,33 @@ function formatDate(dateStr: string | null): string {
 
 function navigateToEdit(user: User) {
     router.push(`/admin/dashboard/users/${user.id}/edit`)
+}
+
+function sanitizeLabel(label: string): string {
+    const cleaned = label
+        .replace('&laquo;', '‹')
+        .replace('&raquo;', '›')
+        .replace(/&[a-z]+;/g, '')
+        .trim()
+    // If cleaning removed everything (e.g. empty separator), show the raw directional arrow
+    if (!cleaned) {
+        const match = label.match(/&laquo;|&raquo;/)
+        return match ? (match[0] === '&laquo;' ? '‹' : '›') : cleaned
+    }
+    return cleaned
+}
+
+function handlePageClick(link: { url: string | null; label: string; active: boolean }) {
+    if (!link.url) return
+    try {
+        const url = new URL(link.url)
+        const page = url.searchParams.get('page')
+        if (page) {
+            fetchUsers(Number(page))
+        }
+    } catch {
+        // Invalid URL, ignore
+    }
 }
 
 onMounted(() => fetchUsers())
@@ -361,9 +388,9 @@ onMounted(() => fetchUsers())
                         :class="link.active
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
-                        v-html="link.label.replace(/&laquo;|&raquo;/g, (m) => m === '&laquo;' ? '‹' : '›').replace(/&lsquo;|&rsquo;|&[a-z]+;/g, '').trim() || link.label.replace(/&laquo;/g, '‹').replace(/&raquo;/g, '›')"
+                        v-html="sanitizeLabel(link.label)"
                         :disabled="!link.url"
-                        @click="link.url && fetchUsers(new URL(link.url).searchParams.get('page') ? Number(new URL(link.url).searchParams.get('page')) : 1)"
+                        @click="handlePageClick(link)"
                     />
                 </div>
             </div>

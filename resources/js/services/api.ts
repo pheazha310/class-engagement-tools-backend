@@ -1,11 +1,22 @@
 /**
  * API service for making authenticated requests to the Laravel backend.
  * Uses the native Fetch API (no Axios dependency).
+ *
+ * On validation errors (422), returns the structured errors object.
+ * On other errors, returns an error message string.
  */
 
-interface ApiResponse<T = any> {
-    data: T
-    error?: string
+export interface ApiValidationErrors {
+    [field: string]: string[]
+}
+
+export type ApiError =
+    | { type: 'validation'; errors: ApiValidationErrors; message: string }
+    | { type: 'general'; message: string }
+
+export interface ApiResponse<T = any> {
+    data: T | null
+    error?: ApiError
 }
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -36,6 +47,23 @@ async function getCsrfToken(): Promise<string> {
     return ''
 }
 
+function parseErrorResponse(status: number, body: any): ApiError {
+    // Laravel validation errors (422) come with an `errors` object
+    if (status === 422 && body?.errors) {
+        return {
+            type: 'validation',
+            errors: body.errors as ApiValidationErrors,
+            message: body.message || 'Validation failed.',
+        }
+    }
+
+    // All other errors
+    return {
+        type: 'general',
+        message: body?.message || `Request failed with status ${status}`,
+    }
+}
+
 async function request<T = any>(
     method: HttpMethod,
     url: string,
@@ -62,16 +90,24 @@ async function request<T = any>(
             body: body ? JSON.stringify(body) : null,
         })
 
+        const responseBody = await response.json().catch(() => null)
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => null)
-            const errorMessage = errorData?.message || `Request failed with status ${response.status}`
-            return { data: null as unknown as T, error: errorMessage }
+            return {
+                data: null,
+                error: parseErrorResponse(response.status, responseBody),
+            }
         }
 
-        const data = await response.json()
-        return { data: data as T }
+        return { data: responseBody as T }
     } catch (error: any) {
-        return { data: null as unknown as T, error: error.message || 'Network request failed' }
+        return {
+            data: null,
+            error: {
+                type: 'general',
+                message: error.message || 'Network request failed',
+            },
+        }
     }
 }
 

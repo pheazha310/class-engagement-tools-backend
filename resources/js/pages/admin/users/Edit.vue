@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { get, put } from '@/services/api'
+import type { ApiValidationErrors } from '@/services/api'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -152,15 +153,18 @@ async function submit() {
 
     const res = await put(`/api/admin/users/${route.params.id}`, body)
     if (res.error) {
-        try {
-            const parsed = JSON.parse(res.error)
-            if (typeof parsed === 'object' && parsed !== null) {
-                errors.value = parsed
-            } else {
-                errors.value = { general: res.error }
+        if (res.error.type === 'validation') {
+            // Map Laravel validation errors to field-level errors (first message per field)
+            const fieldErrors: Record<string, string> = {}
+            const ve = res.error.errors as ApiValidationErrors
+            for (const [field, messages] of Object.entries(ve)) {
+                if (messages.length > 0) {
+                    fieldErrors[field] = messages[0]
+                }
             }
-        } catch {
-            errors.value = { general: res.error }
+            errors.value = fieldErrors
+        } else {
+            errors.value = { general: res.error.message }
         }
         submitting.value = false
         return

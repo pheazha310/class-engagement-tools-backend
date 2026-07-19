@@ -12,6 +12,7 @@ const routes: RouteRecordRaw[] = [
                 name: 'admin.dashboard.overview',
                 component: () => import('@/pages/admin/DashboardOverview.vue'),
             },
+            // Users
             {
                 path: 'users',
                 name: 'admin.users',
@@ -28,6 +29,7 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/users/Edit.vue'),
                 props: true,
             },
+            // Roles
             {
                 path: 'roles',
                 name: 'admin.roles',
@@ -44,6 +46,7 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/roles/Edit.vue'),
                 props: true,
             },
+            // School Names (Locations)
             {
                 path: 'school-names',
                 name: 'admin.school-names',
@@ -59,6 +62,42 @@ const routes: RouteRecordRaw[] = [
                 name: 'admin.school-names.edit',
                 component: () => import('@/pages/admin/locations/Edit.vue'),
                 props: true,
+            },
+            // Schools
+            {
+                path: 'schools',
+                name: 'admin.schools',
+                component: () => import('@/pages/admin/schools/Index.vue'),
+            },
+            // Classes
+            {
+                path: 'classes',
+                name: 'admin.classes',
+                component: () => import('@/pages/admin/classes/Index.vue'),
+            },
+            // Activity Log
+            {
+                path: 'activity',
+                name: 'admin.activity',
+                component: () => import('@/pages/admin/activity/Index.vue'),
+            },
+            // Reports
+            {
+                path: 'reports',
+                name: 'admin.reports',
+                component: () => import('@/pages/admin/reports/Index.vue'),
+            },
+            // Settings
+            {
+                path: 'settings',
+                name: 'admin.settings',
+                component: () => import('@/pages/admin/settings/Index.vue'),
+            },
+            // Security
+            {
+                path: 'security',
+                name: 'admin.security',
+                component: () => import('@/pages/admin/security/Index.vue'),
             },
         ],
     },

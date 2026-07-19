@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { get, post } from '@/services/api'
+import type { ApiValidationErrors } from '@/services/api'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,7 +36,7 @@ const errors = ref<Record<string, string>>({})
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Password strength indicator
+// ─── Password strength indicator ─────────────────────
 const passwordStrength = computed(() => {
     const pw = form.value.password
     if (!pw) return { level: 0, label: '', color: '', bg: '' }
@@ -47,22 +48,32 @@ const passwordStrength = computed(() => {
     if (/\d/.test(pw)) score++
     if (/[^a-zA-Z0-9]/.test(pw)) score++
 
-    if (score <= 1) return { level: 1, label: 'Weak', color: 'text-red-500', bg: 'bg-red-500' }
-    if (score <= 2) return { level: 2, label: 'Fair', color: 'text-orange-500', bg: 'bg-orange-500' }
-    if (score <= 3) return { level: 3, label: 'Good', color: 'text-yellow-500', bg: 'bg-yellow-500' }
-    if (score <= 4) return { level: 4, label: 'Strong', color: 'text-lime-500', bg: 'bg-lime-500' }
-    return { level: 5, label: 'Very Strong', color: 'text-emerald-500', bg: 'bg-emerald-500' }
+    const levels = [
+        { level: 1, label: 'Weak', color: 'text-red-500', bg: 'bg-red-500' },
+        { level: 2, label: 'Fair', color: 'text-orange-500', bg: 'bg-orange-500' },
+        { level: 3, label: 'Good', color: 'text-yellow-500', bg: 'bg-yellow-500' },
+        { level: 4, label: 'Strong', color: 'text-lime-500', bg: 'bg-lime-500' },
+        { level: 5, label: 'Very Strong', color: 'text-emerald-500', bg: 'bg-emerald-500' },
+    ]
+    return levels[Math.min(score - 1, 4)] || levels[0]
 })
 
+// ─── Fetch available roles on mount ───────────────────
 onMounted(async () => {
     const res = await get<RoleOption[]>('/api/admin/roles')
-    if (res.data) availableRoles.value = res.data
+    if (res.data) {
+        availableRoles.value = res.data
+    }
 })
 
+// ─── Role toggle ──────────────────────────────────────
 function toggleRole(roleName: string) {
     const idx = form.value.roles.indexOf(roleName)
-    if (idx === -1) form.value.roles.push(roleName)
-    else form.value.roles.splice(idx, 1)
+    if (idx === -1) {
+        form.value.roles.push(roleName)
+    } else {
+        form.value.roles.splice(idx, 1)
+    }
 }
 
 function roleBadgeVariant(roleName: string, isSelected: boolean): 'default' | 'outline' | 'secondary' | 'destructive' {
@@ -75,21 +86,25 @@ function roleBadgeVariant(roleName: string, isSelected: boolean): 'default' | 'o
     }
 }
 
+// ─── Submit form ──────────────────────────────────────
 async function submit() {
     submitting.value = true
     errors.value = {}
     const res = await post('/api/admin/users', form.value)
 
     if (res.error) {
-        try {
-            const parsed = JSON.parse(res.error)
-            if (typeof parsed === 'object' && parsed !== null) {
-                errors.value = parsed
-            } else {
-                errors.value = { general: res.error }
+        if (res.error.type === 'validation') {
+            // Map Laravel validation errors to field-level errors (first message per field)
+            const fieldErrors: Record<string, string> = {}
+            const ve = res.error.errors as ApiValidationErrors
+            for (const [field, messages] of Object.entries(ve)) {
+                if (messages.length > 0) {
+                    fieldErrors[field] = messages[0]
+                }
             }
-        } catch {
-            errors.value = { general: res.error }
+            errors.value = fieldErrors
+        } else {
+            errors.value = { general: res.error.message }
         }
         submitting.value = false
         return
@@ -283,29 +298,17 @@ function cancel() {
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div class="space-y-1.5">
                             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Country</label>
-                            <Input
-                                v-model="form.country_name"
-                                placeholder="e.g. Cambodia"
-                                :class="errors.country_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''"
-                            />
+                            <Input v-model="form.country_name" placeholder="e.g. Cambodia" :class="errors.country_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''" />
                             <p v-if="errors.country_name" class="text-xs text-red-500 mt-1">{{ errors.country_name }}</p>
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Province</label>
-                            <Input
-                                v-model="form.province_name"
-                                placeholder="e.g. Phnom Penh"
-                                :class="errors.province_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''"
-                            />
+                            <Input v-model="form.province_name" placeholder="e.g. Phnom Penh" :class="errors.province_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''" />
                             <p v-if="errors.province_name" class="text-xs text-red-500 mt-1">{{ errors.province_name }}</p>
                         </div>
                         <div class="space-y-1.5">
                             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
-                            <Input
-                                v-model="form.school_name"
-                                placeholder="e.g. High School"
-                                :class="errors.school_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''"
-                            />
+                            <Input v-model="form.school_name" placeholder="e.g. High School" :class="errors.school_name ? 'border-red-500 focus-visible:ring-red-500/30' : ''" />
                             <p v-if="errors.school_name" class="text-xs text-red-500 mt-1">{{ errors.school_name }}</p>
                         </div>
                     </div>

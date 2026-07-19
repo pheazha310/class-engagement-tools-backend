@@ -19,7 +19,7 @@ async function onSubmit(data: { school_name: string; country: string; province: 
     if (!res.error) {
         router.push('/admin/dashboard/school-names')
     } else {
-        alert(res.error)
+        alert(res.error?.message || 'An error occurred')
     }
 }
 </script>

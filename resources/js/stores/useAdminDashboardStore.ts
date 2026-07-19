@@ -59,6 +59,8 @@ export interface DashboardStats {
     totalSchools: number
     activeClasses: number
     todayActivities: number
+    pendingUsers: number
+    pendingSchools: number
 }
 
 export interface CurrentUser {
@@ -84,6 +86,8 @@ const mockStats: StatCard[] = [
     { id: 'total-schools', title: 'Total Schools', value: 48, description: 'Active educational institutions', growth: 8.2, growthLabel: 'vs last month', accent: 'success', icon: 'school' },
     { id: 'active-classes', title: 'Active Classes', value: 156, description: 'Ongoing classroom sessions', growth: -3.1, growthLabel: 'vs last month', accent: 'warning', icon: 'book' },
     { id: 'today-activities', title: "Today's Activities", value: 1274, description: 'Interactions recorded today', growth: 23.8, growthLabel: 'vs yesterday', accent: 'info', icon: 'activity' },
+    { id: 'pending-users', title: 'Pending Users', value: 23, description: 'Awaiting approval', growth: -5.2, growthLabel: 'vs yesterday', accent: 'warning', icon: 'clock' },
+    { id: 'pending-schools', title: 'Pending Schools', value: 7, description: 'New registrations', growth: 2.1, growthLabel: 'vs last week', accent: 'info', icon: 'building' },
 ]
 
 const mockUserChart: ChartData = {
@@ -119,10 +123,10 @@ const mockNotifications: Notification[] = [
 ]
 
 const mockQuickActions: QuickAction[] = [
-    { id: 'add-user', label: 'Add User', icon: 'user-plus', variant: 'primary', route: '/admin/users/create' },
-    { id: 'add-school', label: 'Add School', icon: 'building', variant: 'success', route: '/admin/schools/create' },
-    { id: 'create-class', label: 'Create Class', icon: 'book-open', variant: 'warning', route: '/admin/classes/create' },
-    { id: 'view-reports', label: 'View Reports', icon: 'bar-chart', variant: 'info', route: '/admin/reports' },
+    { id: 'add-user', label: 'Add User', icon: 'user-plus', variant: 'primary', route: '/admin/dashboard/users/create' },
+    { id: 'add-school', label: 'Add School', icon: 'building', variant: 'success', route: '/admin/dashboard/schools/create' },
+    { id: 'create-class', label: 'Create Class', icon: 'book-open', variant: 'warning', route: '/admin/dashboard/classes/create' },
+    { id: 'view-reports', label: 'View Reports', icon: 'bar-chart', variant: 'info', route: '/admin/dashboard/reports' },
 ]
 
 const mockCurrentUser: CurrentUser = {
@@ -144,6 +148,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         totalSchools: 48,
         activeClasses: 156,
         todayActivities: 1274,
+        pendingUsers: 23,
+        pendingSchools: 7,
     })
     const userRegistrationData = ref<ChartData>(mockUserChart)
     const platformActivityData = ref<ChartData>(mockActivityChart)
@@ -169,7 +175,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
             if (response.error) {
                 console.warn('[DashboardStore] API error, using mock data:', response.error)
-                error.value = response.error
+                error.value = response.error.message || 'Failed to load dashboard data'
                 applyMockData()
             } else if (response.data) {
                 applyApiData(response.data)
@@ -188,7 +194,13 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
     /**
      * Apply data from the API response to the store.
      */
-    function applyApiData(data: DashboardApiResponse): void {
+    /**
+     * Track whether the store has been populated from server-side Inertia props.
+     */
+    const hydratedFromServer = ref(false)
+
+    function applyApiData(data: Partial<DashboardApiResponse>): void {
+        hydratedFromServer.value = true
         if (data.stats && data.stats.length > 0) {
             statsCards.value = data.stats
             dashboardStats.value = {
@@ -196,6 +208,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                 totalSchools: data.stats.find(s => s.id === 'total-schools')?.value ?? 0,
                 activeClasses: data.stats.find(s => s.id === 'active-classes')?.value ?? 0,
                 todayActivities: data.stats.find(s => s.id === 'today-activities')?.value ?? 0,
+                pendingUsers: data.stats.find(s => s.id === 'pending-users')?.value ?? 0,
+                pendingSchools: data.stats.find(s => s.id === 'pending-schools')?.value ?? 0,
             }
         }
 
@@ -230,6 +244,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
             totalSchools: mockStats[1].value,
             activeClasses: mockStats[2].value,
             todayActivities: mockStats[3].value,
+            pendingUsers: mockStats[4].value,
+            pendingSchools: mockStats[5].value,
         }
         userRegistrationData.value = mockUserChart
         platformActivityData.value = mockActivityChart
@@ -289,8 +305,11 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         currentUser,
         isLoading,
         error,
+        hydratedFromServer,
         // Actions
         fetchDashboardData,
+        applyApiData,
+        applyMockData,
         updateStats,
         clearError,
         refresh,

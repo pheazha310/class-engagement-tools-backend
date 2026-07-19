@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\Location;
+use App\Models\Province;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -98,14 +100,14 @@ class LocationController extends Controller
 
     public function lookupData(): JsonResponse
     {
-        $countries = Location::distinct()->orderBy('country')->pluck('country');
+        $countries = Country::orderBy('name')->pluck('name');
 
-        $provinces = Location::select('province', 'country')
-            ->distinct()
-            ->orderBy('province')
+        $provinces = Province::select('provinces.name', 'countries.name as country')
+            ->join('countries', 'provinces.country_id', '=', 'countries.id')
+            ->orderBy('provinces.name')
             ->get()
             ->map(fn ($item): array => [
-                'name' => $item->province,
+                'name' => $item->name,
                 'country' => $item->country,
             ]);
 

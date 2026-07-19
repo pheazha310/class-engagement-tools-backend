@@ -27,7 +27,7 @@ async function deleteRole(role: Role) {
     if (!res.error) {
         roles.value = roles.value.filter((r) => r.id !== role.id)
     } else {
-        alert(res.error)
+        alert(res.error?.message || 'An error occurred')
     }
 }
 </script>

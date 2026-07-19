@@ -19,7 +19,7 @@ async function onSubmit(data: { name: string; permissions: string[] }) {
     if (!res.error) {
         router.push('/admin/dashboard/roles')
     } else {
-        alert(res.error)
+        alert(res.error?.message || 'An error occurred')
     }
 }
 </script>

@@ -1,43 +1,53 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { RecentActivity } from '@/stores/useAdminDashboardStore'
+import { UserPlus, School, Activity, Zap } from '@lucide/vue'
 
-defineProps<{
-    activity: RecentActivity
+const props = defineProps<{
+  activity: RecentActivity
 }>()
 
-const typeIcons: Record<string, string> = {
-    registration: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>',
-    school: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
-    system: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+const typeConfig: Record<string, { bg: string, text: string, icon: object }> = {
+  registration: { bg: 'bg-blue-50', text: 'text-blue-600', icon: UserPlus },
+  school: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: School },
+  system: { bg: 'bg-amber-50', text: 'text-amber-600', icon: Zap },
 }
 
-const typeColors: Record<string, string> = {
-    registration: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30',
-    school: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
-    system: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30',
-}
+const config = computed(() => typeConfig[props.activity.type] || typeConfig.system)
+
+const statusLabel = computed(() => {
+  const map: Record<string, string> = {
+    registered: 'Registered',
+    created: 'Created',
+    started: 'Started',
+    submitted: 'Submitted',
+  }
+  return map[props.activity.action] || props.activity.action
+})
 </script>
 
 <template>
-    <div class="flex items-start gap-3.5 px-6 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-        <div
-            class="flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold text-white shrink-0"
-            :style="{ background: activity.avatarColor }"
-        >
-            {{ activity.initials }}
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="text-sm text-gray-700 dark:text-gray-300 leading-snug">
-                <strong class="font-semibold text-gray-900 dark:text-white">{{ activity.user }}</strong>
-                {{ activity.action }}
-                {{ activity.target }}
-            </p>
-            <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{{ activity.timestamp }}</p>
-        </div>
-        <div
-            class="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-            :class="typeColors[activity.type] || typeColors.system"
-            v-html="typeIcons[activity.type] || typeIcons.system"
-        />
+  <div class="flex items-start gap-3.5 px-5 py-3.5 transition-colors hover:bg-gray-50">
+    <div
+      class="flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold text-white shrink-0"
+      :style="{ background: activity.avatarColor }"
+    >
+      {{ activity.initials }}
     </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm text-gray-600 leading-snug">
+        <span class="font-semibold text-gray-900">{{ activity.user }}</span>
+        <span class="text-gray-500"> {{ activity.action }} </span>
+        <span class="font-medium text-gray-700">{{ activity.target }}</span>
+      </p>
+      <p class="mt-0.5 text-xs text-gray-400">{{ activity.timestamp }}</p>
+    </div>
+    <span
+      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium shrink-0"
+      :class="[config.bg, config.text]"
+    >
+      <component :is="config.icon" class="w-3 h-3" />
+      {{ statusLabel }}
+    </span>
+  </div>
 </template>

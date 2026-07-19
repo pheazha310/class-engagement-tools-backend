@@ -69,8 +69,17 @@ async function deleteItem(item: SchoolName) {
     if (!res.error) {
         fetchData(pagination.value.current_page)
     } else {
-        alert(res.error)
+        alert(res.error?.message || 'An error occurred')
     }
+}
+
+function handlePageClick(link: { url: string | null; label: string; active: boolean }) {
+    if (!link.url) return
+    try {
+        const url = new URL(link.url)
+        const page = url.searchParams.get('page')
+        if (page) fetchData(Number(page))
+    } catch { /* ignore invalid URLs */ }
 }
 
 onMounted(() => fetchData())
@@ -163,7 +172,7 @@ onMounted(() => fetchData())
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700'"
                     :disabled="!link.url"
-                    @click="link.url && fetchData(new URL(link.url).searchParams.get('page') ? Number(new URL(link.url).searchParams.get('page')) : 1)"
+                    @click="handlePageClick(link)"
                 >
                     {{ link.label.replace('&laquo;', '‹').replace('&raquo;', '›').replace(/&[a-z]+;/g, '').trim() }}
                 </button>
