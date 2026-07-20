@@ -16,7 +16,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::factory()->firstOrCreate(
+        $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin',

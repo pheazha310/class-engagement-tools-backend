@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(LocationSeeder::class);
 
-        $teacher = User::factory()->firstOrCreate(
+        $teacher = User::firstOrCreate(
             ['email' => 'teacher@example.com'],
             [
                 'name' => 'Test Teacher',
