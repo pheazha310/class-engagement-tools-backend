@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Location;
-use App\Models\Province;
+use App\Models\School;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,33 +12,22 @@ class LocationSchoolController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'province_id' => 'required_without:province|exists:provinces,id',
-            'province' => 'required_without:province_id|string|max:255',
+            'province_id' => 'required|exists:provinces,id',
             'search' => 'nullable|string|max:255',
         ]);
 
-        $province = $request->input('province');
-
-        if ($request->filled('province_id')) {
-            $provinceModel = Province::find($request->integer('province_id'));
-            $province = $provinceModel?->name;
-        }
-
-        $query = Location::query()->where('province', $province);
+        $query = School::query()->where('province_id', $request->integer('province_id'));
 
         if ($request->filled('search')) {
             $query->where('school_name', 'like', '%'.$request->input('search').'%');
         }
 
-        $locations = $query->orderBy('school_name')->get();
+        $schools = $query->orderBy('school_name')->get(['id', 'school_name']);
 
         return response()->json(
-            $locations->map(fn (Location $location): array => [
-                'id' => $location->id,
-                'name' => $location->school_name,
-                'address' => null,
-                'latitude' => null,
-                'longitude' => null,
+            $schools->map(fn (School $school): array => [
+                'id' => $school->id,
+                'name' => $school->school_name,
             ])
         );
     }

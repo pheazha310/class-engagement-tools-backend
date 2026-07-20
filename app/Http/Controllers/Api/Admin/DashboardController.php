@@ -243,7 +243,7 @@ class DashboardController extends Controller
                 'initials' => 'SY',
                 'avatarColor' => '#10b981',
                 'action' => 'added',
-                'target' => 'new school: "'.$school->name.'"',
+                'target' => 'new school: "'.$school->school_name.'"',
                 'timestamp' => $school->created_at->diffForHumans(),
                 'type' => 'school',
             ];

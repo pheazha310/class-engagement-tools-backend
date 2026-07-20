@@ -39,7 +39,6 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
     'create': 'Create',
     'edit': 'Edit',
     'roles': 'Roles',
-    'school-names': 'School Names',
     'schools': 'Schools',
     'classes': 'Classes',
     'activity': 'Activity Log',

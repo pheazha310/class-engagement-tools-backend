@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Api\Admin\LocationController as AdminLocationController;
 use App\Http\Controllers\Api\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Api\Admin\SchoolController as AdminSchoolController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
@@ -88,12 +88,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
 
-        Route::get('locations', [AdminLocationController::class, 'index']);
-        Route::post('locations', [AdminLocationController::class, 'store']);
-        Route::get('locations/{location}', [AdminLocationController::class, 'show']);
-        Route::put('locations/{location}', [AdminLocationController::class, 'update']);
-        Route::delete('locations/{location}', [AdminLocationController::class, 'destroy']);
-        Route::get('locations/lookup/data', [AdminLocationController::class, 'lookupData']);
+        Route::get('schools', [AdminSchoolController::class, 'index']);
+        Route::post('schools', [AdminSchoolController::class, 'store']);
+        Route::get('schools/{school}', [AdminSchoolController::class, 'show']);
+        Route::put('schools/{school}', [AdminSchoolController::class, 'update']);
+        Route::delete('schools/{school}', [AdminSchoolController::class, 'destroy']);
+        Route::get('schools/lookup/data', [AdminSchoolController::class, 'lookupData']);
 
         Route::get('roles', [AdminRoleController::class, 'index']);
         Route::post('roles', [AdminRoleController::class, 'store']);

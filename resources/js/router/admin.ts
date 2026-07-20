@@ -46,23 +46,6 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/roles/Edit.vue'),
                 props: true,
             },
-            // School Names (Locations)
-            {
-                path: 'school-names',
-                name: 'admin.school-names',
-                component: () => import('@/pages/admin/locations/Index.vue'),
-            },
-            {
-                path: 'school-names/create',
-                name: 'admin.school-names.create',
-                component: () => import('@/pages/admin/locations/Create.vue'),
-            },
-            {
-                path: 'school-names/:id/edit',
-                name: 'admin.school-names.edit',
-                component: () => import('@/pages/admin/locations/Edit.vue'),
-                props: true,
-            },
             // Schools
             {
                 path: 'schools',

@@ -125,7 +125,7 @@ class UserController extends Controller
             'email' => $user->email,
             'email_verified_at' => $user->email_verified_at,
             'roles' => $user->roles->pluck('name'),
-            'school_name' => $user->profile?->school?->name ?? '-',
+            'school_name' => $user->profile?->school?->school_name ?? '-',
             'country_name' => $user->profile?->country?->name ?? '-',
             'province_name' => $user->profile?->province?->name ?? '-',
             'created_at' => $user->created_at,
@@ -165,13 +165,13 @@ class UserController extends Controller
         $schoolName = trim((string) ($validated['school_name'] ?? ''));
         if ($schoolName !== '') {
             $school = School::firstOrCreate(
-                ['name' => $schoolName],
-                ['province_id' => $profileData['province_id'] ?? $user->profile?->province_id],
+                ['school_name' => $schoolName],
+                [
+                    'country_id' => $profileData['country_id'] ?? $user->profile?->country_id,
+                    'province_id' => $profileData['province_id'] ?? $user->profile?->province_id,
+                ],
             );
             $profileData['school_id'] = $school->id;
-            if (! isset($profileData['province_id']) && $school->province_id !== null) {
-                $profileData['province_id'] = $school->province_id;
-            }
         }
 
         if ($profileData === []) {

@@ -23,8 +23,13 @@ function toggleTheme() {
   updateAppearance(isDark.value ? 'light' : 'dark')
 }
 
-function handleLogout() {
-  window.location.href = '/logout'
+async function handleLogout() {
+  try {
+    await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '' } })
+  } catch {
+    // fallback to GET if POST fails
+  }
+  window.location.href = '/login'
 }
 </script>
 

@@ -77,10 +77,16 @@ class CreateNewUser implements CreatesNewUsers
         $schoolName = trim((string) ($input['school_name'] ?? ''));
         if ($schoolName !== '') {
             $school = School::firstOrCreate(
-                ['name' => $schoolName],
-                ['province_id' => $profileData['province_id'] ?? null],
+                ['school_name' => $schoolName],
+                [
+                    'country_id' => $profileData['country_id'] ?? null,
+                    'province_id' => $profileData['province_id'] ?? null,
+                ],
             );
             $profileData['school_id'] = $school->id;
+            if (! isset($profileData['country_id']) && $school->country_id !== null) {
+                $profileData['country_id'] = $school->country_id;
+            }
             if (! isset($profileData['province_id']) && $school->province_id !== null) {
                 $profileData['province_id'] = $school->province_id;
             }

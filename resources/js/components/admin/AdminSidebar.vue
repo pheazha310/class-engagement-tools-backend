@@ -74,8 +74,13 @@ function isActive(itemRoute: string): boolean {
   return route.path === itemRoute || route.path.startsWith(itemRoute + "/");
 }
 
-function handleLogout() {
-  window.location.href = "/logout";
+async function handleLogout() {
+  try {
+    await fetch('/logout', { method: 'POST', headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '' } })
+  } catch {
+    // fallback to GET if POST fails
+  }
+  window.location.href = '/login'
 }
 
 function navigateTo(item: SidebarItem) {
