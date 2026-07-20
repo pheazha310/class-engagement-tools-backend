@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DistrictController;
+use App\Http\Controllers\Api\GameSessionController;
 use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
 use App\Http\Controllers\Api\ProfileController;
@@ -33,6 +34,12 @@ Route::get('provinces', [ProvinceController::class, 'index']);
 Route::get('districts', [DistrictController::class, 'index']);
 Route::get('location-schools', [LocationSchoolController::class, 'index']);
 Route::post('school-requests', [SchoolRequestController::class, 'store'])->middleware('throttle:10,1');
+Route::post('game-sessions', [GameSessionController::class, 'store']);
+Route::post('game-sessions/generate-questions', [GameSessionController::class, 'generateQuestions']);
+Route::get('game-sessions/join/{joinCode}', [GameSessionController::class, 'showByJoinCode'])->name('game-sessions.join');
+Route::post('game-sessions/{gameSession}/validate-answer', [GameSessionController::class, 'validateAnswer'])->name('game-sessions.validate-answer');
+Route::get('game-sessions/{gameSession}/leaderboard', [GameSessionController::class, 'leaderboard'])->name('game-sessions.leaderboard');
+Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
 
 // Quiz routes — public (no auth required)
 Route::get('quizzes', [QuizController::class, 'index']);
