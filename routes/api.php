@@ -109,6 +109,7 @@ Route::get('sounds', [SoundController::class, 'index']);
 
 // Soundboard routes — authenticated (teacher)
 Route::post('sounds/{sound}/play', [SoundController::class, 'play'])->middleware(['web', 'auth:sanctum']);
+Route::get('sounds/history', [SoundController::class, 'history'])->middleware(['web', 'auth:sanctum']);
 
 // Poll routes — authenticated (teacher/admin)
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
