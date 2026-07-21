@@ -18,6 +18,10 @@ class LocationSchoolController extends Controller
 
         $query = School::query()->where('province_id', $request->integer('province_id'));
 
+        if ($request->filled('country')) {
+            $query->where('country', $request->input('country'));
+        }
+
         if ($request->filled('search')) {
             $query->where('school_name', 'like', '%'.$request->input('search').'%');
         }

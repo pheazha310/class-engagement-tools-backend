@@ -10,6 +10,7 @@ use App\Models\UserProfile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class RegistrationService
 {
@@ -30,7 +31,9 @@ class RegistrationService
                 ], $profileData));
             }
 
-            $user->assignRole($data['role'] ?? 'student');
+            $roleName = $data['role'] ?? 'student';
+            Role::findOrCreate($roleName, config('auth.defaults.guard', 'web'));
+            $user->assignRole($roleName);
 
             return $user;
         });

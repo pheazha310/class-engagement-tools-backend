@@ -16,6 +16,26 @@ use Illuminate\Support\Facades\Gate;
 
 class WheelController extends Controller
 {
+    private function resolveThemeId(?string $color): ?string
+    {
+        if (! $color) {
+            return null;
+        }
+
+        $map = [
+            'default' => 'Classic',
+            'ocean' => 'Ocean',
+            'sunset' => 'Sunset',
+            'forest' => 'Forest',
+            'pastel' => 'Classic',
+            'neon' => 'Classic',
+        ];
+
+        $name = $map[$color] ?? 'Classic';
+
+        return WheelTheme::where('name', $name)->first()?->id;
+    }
+
     public function index(): JsonResponse
     {
         $wheels = auth()->user()->wheels()->with(['participants', 'theme'])->get();
@@ -27,8 +47,13 @@ class WheelController extends Controller
     {
         $data = $request->validated();
 
+        if (empty($data['theme_id']) && ! empty($data['color'])) {
+            $data['theme_id'] = $this->resolveThemeId($data['color']);
+        }
+
         if (empty($data['theme_id'])) {
-            $data['theme_id'] = WheelTheme::where('is_default', true)->first()?->id;
+            $theme = WheelTheme::where('is_default', true)->first();
+            $data['theme_id'] = $theme?->id;
         }
 
         $wheel = auth()->user()->wheels()->create($data);
@@ -70,7 +95,13 @@ class WheelController extends Controller
     {
         Gate::authorize('update', $wheel);
 
-        $wheel->update($request->validated());
+        $data = $request->validated();
+
+        if (empty($data['theme_id']) && ! empty($data['color'])) {
+            $data['theme_id'] = $this->resolveThemeId($data['color']);
+        }
+
+        $wheel->update($data);
 
         return response()->json($wheel->load(['participants', 'theme']), Response::HTTP_OK);
     }
