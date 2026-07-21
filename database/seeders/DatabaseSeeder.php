@@ -62,6 +62,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             WheelThemeSeeder::class,
             ClassroomQuizSeeder::class,
+            SoundSeeder::class,
         ]);
     }
 }

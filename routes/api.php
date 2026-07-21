@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\QuizRankingController;
 use App\Http\Controllers\Api\QuizReportController;
+use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
@@ -102,6 +103,9 @@ Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
 Route::get('polls/{poll}/results', [PollController::class, 'results']);
 Route::get('polls/{poll}', [PollController::class, 'show']);
 Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
+
+// Soundboard routes — public (no auth required)
+Route::get('sounds', [SoundController::class, 'index']);
 
 // Poll routes — authenticated (teacher/admin)
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
