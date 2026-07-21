@@ -7,6 +7,7 @@ use App\Models\GameHistory;
 use App\Models\GameSession;
 use App\Repositories\Contracts\GameHistoryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class GameHistoryRepository implements GameHistoryRepositoryInterface
 {
@@ -77,5 +78,23 @@ class GameHistoryRepository implements GameHistoryRepositoryInterface
             'started_at' => $session->started_at,
             'ended_at' => $session->ended_at ?? now(),
         ]);
+    }
+
+    public function findEndedByTeacher(int $teacherId): Collection
+    {
+        return GameHistory::with('gameSession', 'teacher')
+            ->where('teacher_id', $teacherId)
+            ->whereHas('gameSession', fn ($query) => $query->where('status', 'ended'))
+            ->latest()
+            ->get();
+    }
+
+    public function findEndedGuestSessions(): Collection
+    {
+        return GameHistory::with('gameSession', 'teacher')
+            ->whereNull('teacher_id')
+            ->whereHas('gameSession', fn ($query) => $query->where('status', 'ended'))
+            ->latest()
+            ->get();
     }
 }

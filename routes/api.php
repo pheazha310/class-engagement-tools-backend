@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DistrictController;
+use App\Http\Controllers\Api\GameHistoryController;
 use App\Http\Controllers\Api\GameSessionController;
 use App\Http\Controllers\Api\LocationSchoolController;
 use App\Http\Controllers\Api\PollController;
@@ -32,6 +33,9 @@ Route::post('game-sessions/{gameSession}/validate-answer', [GameSessionControlle
 Route::get('game-sessions/{gameSession}/leaderboard', [GameSessionController::class, 'leaderboard'])->name('game-sessions.leaderboard');
 Route::post('game-sessions/{gameSession}/end', [GameSessionController::class, 'end'])->name('game-sessions.end');
 Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
+Route::get('game-histories', [GameHistoryController::class, 'index'])->middleware('auth:sanctum');
+Route::get('game-histories/{id}', [GameHistoryController::class, 'show'])->middleware('auth:sanctum');
+Route::get('game-histories/{id}/export/{format}', [GameHistoryController::class, 'export'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);

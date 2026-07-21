@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\GameAnswer;
+use App\Models\GameHistory;
 use App\Models\GameSession;
 use App\Models\User;
 
@@ -183,4 +184,125 @@ it('returns not found when ending a non-existent game session', function () {
     actingAs($this->teacher)
         ->postJson('/api/game-sessions/99999/end')
         ->assertNotFound();
+});
+
+it('teacher can export game history as CSV', function () {
+    $session = GameSession::factory()->create([
+        'teacher_id' => $this->teacher->id,
+        'status' => 'active',
+        'started_at' => now()->subHour(),
+    ]);
+
+    GameAnswer::factory()->create([
+        'game_session_id' => $session->id,
+        'participant_name' => 'Alice',
+        'points_awarded' => 20,
+    ]);
+
+    GameAnswer::factory()->create([
+        'game_session_id' => $session->id,
+        'participant_name' => 'Bob',
+        'points_awarded' => 10,
+    ]);
+
+    $endResponse = actingAs($this->teacher)
+        ->postJson("/api/game-sessions/{$session->id}/end");
+
+    $endResponse->assertOk();
+
+    $history = $endResponse->json('game_history');
+
+    actingAs($this->teacher)
+        ->getJson("/api/game-histories/{$history['id']}/export/csv")
+        ->assertOk()
+        ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
+        ->assertHeader('Content-Disposition', "attachment; filename=\"game-result-{$history['id']}.csv\"")
+        ->assertSee('Alice')
+        ->assertSee('Bob')
+        ->assertSee('20')
+        ->assertSee('10');
+});
+
+it('teacher can export game history as PDF', function () {
+    $session = GameSession::factory()->create([
+        'teacher_id' => $this->teacher->id,
+        'status' => 'active',
+        'started_at' => now()->subHour(),
+    ]);
+
+    GameAnswer::factory()->create([
+        'game_session_id' => $session->id,
+        'participant_name' => 'Charlie',
+        'points_awarded' => 15,
+    ]);
+
+    $endResponse = actingAs($this->teacher)
+        ->postJson("/api/game-sessions/{$session->id}/end");
+
+    $endResponse->assertOk();
+
+    $history = $endResponse->json('game_history');
+
+    actingAs($this->teacher)
+        ->getJson("/api/game-histories/{$history['id']}/export/pdf")
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', "attachment; filename=\"game-result-{$history['id']}.pdf\"");
+});
+
+it('returns not found when exporting non-existent game history', function () {
+    actingAs($this->teacher)
+        ->getJson('/api/game-histories/99999/export/csv')
+        ->assertNotFound();
+});
+
+it('returns unprocessable when exporting an active game session', function () {
+    $session = GameSession::factory()->create([
+        'teacher_id' => $this->teacher->id,
+        'status' => 'active',
+        'started_at' => now()->subHour(),
+    ]);
+
+    GameAnswer::factory()->create([
+        'game_session_id' => $session->id,
+        'participant_name' => 'Dave',
+        'points_awarded' => 5,
+    ]);
+
+    $history = GameHistory::factory()->create([
+        'game_session_id' => $session->id,
+        'teacher_id' => $this->teacher->id,
+        'game_type' => $session->game_type,
+    ]);
+
+    actingAs($this->teacher)
+        ->getJson("/api/game-histories/{$history->id}/export/csv")
+        ->assertStatus(422)
+        ->assertJsonFragment(['message' => 'Only completed games can be exported.']);
+});
+
+it('returns bad request for unsupported export format', function () {
+    $session = GameSession::factory()->create([
+        'teacher_id' => $this->teacher->id,
+        'status' => 'active',
+        'started_at' => now()->subHour(),
+    ]);
+
+    GameAnswer::factory()->create([
+        'game_session_id' => $session->id,
+        'participant_name' => 'Eve',
+        'points_awarded' => 25,
+    ]);
+
+    $endResponse = actingAs($this->teacher)
+        ->postJson("/api/game-sessions/{$session->id}/end");
+
+    $endResponse->assertOk();
+
+    $history = $endResponse->json('game_history');
+
+    actingAs($this->teacher)
+        ->getJson("/api/game-histories/{$history['id']}/export/xml")
+        ->assertStatus(400)
+        ->assertJsonFragment(['message' => 'Invalid export format. Supported formats: csv, pdf.']);
 });
