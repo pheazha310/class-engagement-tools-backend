@@ -38,6 +38,16 @@ class PollRepository implements PollRepositoryInterface
         return Poll::with('options')->byRoomCode($roomCode)->first();
     }
 
+    public function findByShareToken(string $shareToken): ?Poll
+    {
+        return Poll::with('options')->byShareToken($shareToken)->first();
+    }
+
+    public function findExpired(): iterable
+    {
+        return Poll::expired()->get();
+    }
+
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator
     {
         return Poll::with('options')

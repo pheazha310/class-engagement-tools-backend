@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Poll;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePollRequest extends FormRequest
@@ -10,16 +11,27 @@ class UpdatePollRequest extends FormRequest
     {
         $poll = $this->route('poll');
 
+        if (! $poll instanceof Poll) {
+            return false;
+        }
+
         return $this->user()?->isTeacher()
-            && $poll?->teacher_id === $this->user()->id
-            && $poll?->isDraft();
+            && $poll->created_by === $this->user()->id
+            && $poll->isDraft();
     }
 
     public function rules(): array
     {
         return [
-            'question' => ['sometimes', 'required', 'string', 'max:500'],
-            'options' => ['sometimes', 'required', 'array', 'min:2', 'max:10'],
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'question' => ['sometimes', 'required', 'string', 'max:1000'],
+            'poll_type' => ['sometimes', 'required', 'string', 'in:multiple_choice,yes_no,rating'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'allow_multiple_votes' => ['boolean'],
+            'anonymous' => ['boolean'],
+            'show_results' => ['boolean'],
+            'options' => ['sometimes', 'required', 'array', 'min:2', 'max:20'],
             'options.*' => ['required', 'string', 'max:255', 'distinct'],
         ];
     }
@@ -27,9 +39,8 @@ class UpdatePollRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'question.required' => 'A poll question is required.',
-            'options.min' => 'A poll must have at least 2 options.',
-            'options.max' => 'A poll can have at most 10 options.',
+            'options.min' => 'At least 2 options are required.',
+            'options.max' => 'Maximum 20 options allowed.',
             'options.*.distinct' => 'Duplicate options are not allowed.',
         ];
     }

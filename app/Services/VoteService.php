@@ -20,7 +20,7 @@ readonly class VoteService
         $data = [
             'poll_id' => $poll->id,
             'option_id' => $optionId,
-            'points' => $points ?? ($poll->max_points ? 1 : 1),
+            'points' => $points,
             'text_response' => $textResponse,
         ];
 

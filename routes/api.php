@@ -67,13 +67,12 @@ Route::get('quizzes/{quiz}/report/pdf', [QuizReportController::class, 'exportPdf
 Route::get('quizzes/{quiz}/report/excel', [QuizReportController::class, 'exportExcel']);
 
 // Public poll routes (no auth required)
-Route::get('polls/active', [PollController::class, 'active']);
-Route::post('polls/join-by-code', [PollController::class, 'joinByCode']);
-Route::get('polls/{poll}/results', [PollController::class, 'results']);
-Route::get('polls/{poll}', [PollController::class, 'show']);
-Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
+Route::get('polls/active', [PollController::class, 'activePolls']);
+Route::get('polls/public/{token}', [PollController::class, 'showByToken']);
+Route::get('polls/public/{token}/results', [PollController::class, 'publicResults']);
+Route::post('polls/public/{token}/vote', [VoteController::class, 'vote']);
 
-// Poll routes — authenticated (teacher/admin)
+// Poll routes — authenticated (teacher only)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
 
@@ -81,11 +80,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
 
-    Route::get('polls/school-active', [PollController::class, 'schoolActive']);
-    Route::apiResource('polls', PollController::class)->except(['show']);
+    Route::get('polls', [PollController::class, 'index']);
+    Route::post('polls', [PollController::class, 'store']);
+    Route::get('polls/{poll}', [PollController::class, 'show']);
+    Route::put('polls/{poll}', [PollController::class, 'update']);
+    Route::delete('polls/{poll}', [PollController::class, 'destroy']);
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
-    Route::patch('polls/{poll}/status', [PollController::class, 'status']);
 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('users', [AdminUserController::class, 'index']);

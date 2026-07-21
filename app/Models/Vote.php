@@ -2,17 +2,25 @@
 
 namespace App\Models;
 
-use Database\Factories\VoteFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['poll_id', 'option_id', 'student_id', 'points', 'text_response', 'voter_token'])]
 class Vote extends Model
 {
-    /** @use HasFactory<VoteFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'poll_id',
+        'poll_option_id',
+        'user_id',
+        'guest_token',
+    ];
 
     public function poll(): BelongsTo
     {
@@ -21,11 +29,11 @@ class Vote extends Model
 
     public function option(): BelongsTo
     {
-        return $this->belongsTo(PollOption::class, 'option_id');
+        return $this->belongsTo(PollOption::class, 'poll_option_id');
     }
 
-    public function student(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'student_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

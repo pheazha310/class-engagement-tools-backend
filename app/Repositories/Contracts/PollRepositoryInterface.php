@@ -19,6 +19,10 @@ interface PollRepositoryInterface
 
     public function findByRoomCode(string $roomCode): ?Poll;
 
+    public function findByShareToken(string $shareToken): ?Poll;
+
+    public function findExpired(): iterable;
+
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator;
 
     public function create(array $data): Poll;

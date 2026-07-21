@@ -14,7 +14,7 @@ class PollOptionResource extends JsonResource
         return [
             'id' => $this->id,
             'option_text' => $this->option_text,
-            'created_at' => $this->created_at->toISOString(),
+            'display_order' => $this->display_order,
         ];
     }
 }

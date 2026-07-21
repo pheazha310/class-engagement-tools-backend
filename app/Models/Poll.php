@@ -2,60 +2,61 @@
 
 namespace App\Models;
 
-use Database\Factories\PollFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['teacher_id', 'question', 'room_code', 'is_multiple_choice', 'duration_minutes', 'status', 'started_at', 'ended_at', 'school_id', 'province_id', 'is_anonymous', 'is_quiz', 'is_open_text', 'max_points'])]
 class Poll extends Model
 {
-    /** @use HasFactory<PollFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'title',
+        'description',
+        'question',
+        'poll_type',
+        'status',
+        'duration_minutes',
+        'allow_multiple_votes',
+        'anonymous',
+        'show_results',
+        'public_token',
+        'created_by',
+        'started_at',
+        'ended_at',
+    ];
 
     protected function casts(): array
     {
         return [
+            'duration_minutes' => 'integer',
+            'allow_multiple_votes' => 'boolean',
+            'anonymous' => 'boolean',
+            'show_results' => 'boolean',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
-            'is_multiple_choice' => 'boolean',
         ];
     }
 
     protected static function booted(): void
     {
         static::creating(function (Poll $poll) {
-            if (empty($poll->room_code)) {
-                $poll->room_code = static::generateUniqueRoomCode();
+            if (empty($poll->public_token)) {
+                $poll->public_token = (string) Str::uuid();
             }
         });
     }
 
-    public static function generateUniqueRoomCode(): string
+    public function creator(): BelongsTo
     {
-        do {
-            $code = strtoupper(Str::random(6));
-        } while (static::where('room_code', $code)->exists());
-
-        return $code;
-    }
-
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'teacher_id');
-    }
-
-    public function school(): BelongsTo
-    {
-        return $this->belongsTo(School::class);
-    }
-
-    public function province(): BelongsTo
-    {
-        return $this->belongsTo(Province::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function options(): HasMany
@@ -68,16 +69,6 @@ class Poll extends Model
         return $this->hasMany(Vote::class);
     }
 
-    public function participants(): HasMany
-    {
-        return $this->hasMany(Vote::class)->selectRaw('DISTINCT student_id');
-    }
-
-    public function participantCount(): int
-    {
-        return $this->votes()->distinct('student_id')->count('student_id');
-    }
-
     public function isDraft(): bool
     {
         return $this->status === 'draft';
@@ -88,9 +79,19 @@ class Poll extends Model
         return $this->status === 'active';
     }
 
-    public function isEnded(): bool
+    public function isClosed(): bool
     {
-        return $this->status === 'ended';
+        return $this->status === 'closed';
+    }
+
+    public function scopeByCreator($query, string $userId)
+    {
+        return $query->where('created_by', $userId);
+    }
+
+    public function scopeByPublicToken($query, string $token)
+    {
+        return $query->where('public_token', $token);
     }
 
     public function scopeActive($query)
@@ -98,13 +99,13 @@ class Poll extends Model
         return $query->where('status', 'active');
     }
 
-    public function scopeBySchool($query, int $schoolId)
+    public function scopeDraft($query)
     {
-        return $query->where('school_id', $schoolId);
+        return $query->where('status', 'draft');
     }
 
-    public function scopeByRoomCode($query, string $roomCode)
+    public function scopeClosed($query)
     {
-        return $query->where('room_code', strtoupper($roomCode));
+        return $query->where('status', 'closed');
     }
 }

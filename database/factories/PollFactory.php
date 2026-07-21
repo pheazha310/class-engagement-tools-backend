@@ -2,21 +2,24 @@
 
 namespace Database\Factories;
 
-use App\Models\Poll;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Poll>
- */
 class PollFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'teacher_id' => User::factory(),
+            'title' => fake()->words(3, true),
+            'description' => fake()->sentence(),
             'question' => fake()->sentence(),
+            'poll_type' => fake()->randomElement(['multiple_choice', 'yes_no', 'rating']),
             'status' => 'draft',
+            'duration_minutes' => null,
+            'allow_multiple_votes' => false,
+            'anonymous' => true,
+            'show_results' => true,
+            'created_by' => User::factory(),
             'started_at' => null,
             'ended_at' => null,
         ];
@@ -30,10 +33,10 @@ class PollFactory extends Factory
         ]);
     }
 
-    public function ended(): static
+    public function closed(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'ended',
+            'status' => 'closed',
             'started_at' => now()->subMinutes(10),
             'ended_at' => now(),
         ]);

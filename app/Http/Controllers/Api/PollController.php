@@ -5,119 +5,123 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePollRequest;
 use App\Http\Requests\UpdatePollRequest;
-use App\Http\Requests\UpdatePollStatusRequest;
 use App\Http\Resources\PollResource;
 use App\Http\Resources\PollResultResource;
 use App\Models\Poll;
-use App\Services\PollService;
+use App\Models\PollOption;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PollController extends Controller
 {
-    public function __construct(
-        private readonly PollService $pollService,
-    ) {}
-
-    public function index(Request $request): ResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $polls = $this->pollService->getTeacherPolls(
-            $request->user(),
-            (int) $request->input('per_page', 10),
-        );
+        $polls = Poll::byCreator($request->user()->id)
+            ->with('options')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         return PollResource::collection($polls);
     }
 
-    public function show(Request $request, Poll $poll): PollResource|JsonResponse
+    public function store(StorePollRequest $request): JsonResponse
     {
-        $user = $request->user();
+        $data = $request->validated();
 
-        if ($user?->isStudent()) {
-            if (! $poll->isActive() || $poll->school_id === null || $user->schoolId() !== $poll->school_id) {
-                return response()->json(['message' => 'This poll is not available for your school.'], 403);
-            }
-            $poll->load('options');
+        $poll = Poll::create([
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'question' => $data['question'],
+            'poll_type' => $data['poll_type'],
+            'duration_minutes' => $data['duration_minutes'] ?? null,
+            'allow_multiple_votes' => $data['allow_multiple_votes'] ?? false,
+            'anonymous' => $data['anonymous'] ?? true,
+            'show_results' => $data['show_results'] ?? true,
+            'created_by' => $request->user()->id,
+        ]);
 
-            return new PollResource($poll);
-        }
-
-        if ($user?->isTeacher()) {
-            if ($poll->teacher_id !== $user->id) {
-                return response()->json(['message' => 'Unauthorized.'], 403);
-            }
-            $poll->load('options');
-
-            return new PollResource($poll);
-        }
-
-        // Unauthenticated / public access
-        if (! $poll->isActive()) {
-            return response()->json(['message' => 'Poll not found or not active.'], 404);
+        foreach ($data['options'] as $order => $optionText) {
+            PollOption::create([
+                'poll_id' => $poll->id,
+                'option_text' => $optionText,
+                'display_order' => $order,
+            ]);
         }
 
         $poll->load('options');
 
-        return new PollResource($poll);
+        return response()->json([
+            'message' => 'Poll created successfully.',
+            'poll' => new PollResource($poll),
+        ], 201);
     }
 
-    public function joinByCode(Request $request): JsonResponse
+    public function show(Request $request, Poll $poll): JsonResponse
     {
-        $request->validate(['room_code' => ['required', 'string', 'size:6']]);
-
-        $poll = $this->pollService->findByRoomCode($request->input('room_code'));
-
-        if (! $poll || ! $poll->isActive()) {
-            return response()->json(['message' => 'Invalid or inactive room code.'], 404);
+        if ($poll->created_by !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $user = $request->user();
-        $voterToken = $request->input('voter_token');
-
-        $hasVoted = $user
-            ? $poll->votes()->where('student_id', $user->id)->exists()
-            : ($voterToken
-                ? $poll->votes()->where('voter_token', $voterToken)->exists()
-                : false);
+        $poll->load('options');
 
         return response()->json([
             'poll' => new PollResource($poll),
-            'hasVoted' => $hasVoted,
         ]);
     }
 
-    public function store(StorePollRequest $request): PollResource
+    public function update(UpdatePollRequest $request, Poll $poll): JsonResponse
     {
-        $poll = $this->pollService->create(
-            $request->validated(),
-            $request->user(),
-        );
+        $data = $request->validated();
 
-        return new PollResource($poll);
-    }
+        $poll->update([
+            'title' => $data['title'] ?? $poll->title,
+            'description' => array_key_exists('description', $data) ? $data['description'] : $poll->description,
+            'question' => $data['question'] ?? $poll->question,
+            'poll_type' => $data['poll_type'] ?? $poll->poll_type,
+            'duration_minutes' => array_key_exists('duration_minutes', $data) ? $data['duration_minutes'] : $poll->duration_minutes,
+            'allow_multiple_votes' => $data['allow_multiple_votes'] ?? $poll->allow_multiple_votes,
+            'anonymous' => $data['anonymous'] ?? $poll->anonymous,
+            'show_results' => $data['show_results'] ?? $poll->show_results,
+        ]);
 
-    public function update(UpdatePollRequest $request, Poll $poll): PollResource
-    {
-        $poll = $this->pollService->update($poll, $request->validated());
+        if (isset($data['options'])) {
+            $poll->options()->delete();
+            foreach ($data['options'] as $order => $optionText) {
+                PollOption::create([
+                    'poll_id' => $poll->id,
+                    'option_text' => $optionText,
+                    'display_order' => $order,
+                ]);
+            }
+        }
 
-        return new PollResource($poll);
+        $poll->load('options');
+
+        return response()->json([
+            'message' => 'Poll updated successfully.',
+            'poll' => new PollResource($poll),
+        ]);
     }
 
     public function destroy(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->teacher_id !== $request->user()->id) {
+        if ($poll->created_by !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $this->pollService->delete($poll);
+        if (! $poll->isDraft()) {
+            return response()->json(['message' => 'Only draft polls can be deleted.'], 422);
+        }
+
+        $poll->delete();
 
         return response()->json(['message' => 'Poll deleted successfully.']);
     }
 
     public function start(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->teacher_id !== $request->user()->id) {
+        if ($poll->created_by !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -125,7 +129,12 @@ class PollController extends Controller
             return response()->json(['message' => 'Only draft polls can be started.'], 422);
         }
 
-        $poll = $this->pollService->start($poll);
+        $poll->update([
+            'status' => 'active',
+            'started_at' => now(),
+        ]);
+
+        $poll->load('options');
 
         return response()->json([
             'message' => 'Poll started successfully.',
@@ -135,7 +144,7 @@ class PollController extends Controller
 
     public function end(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->teacher_id !== $request->user()->id) {
+        if ($poll->created_by !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -143,7 +152,12 @@ class PollController extends Controller
             return response()->json(['message' => 'Only active polls can be ended.'], 422);
         }
 
-        $poll = $this->pollService->end($poll);
+        $poll->update([
+            'status' => 'closed',
+            'ended_at' => now(),
+        ]);
+
+        $poll->load('options');
 
         return response()->json([
             'message' => 'Poll ended successfully.',
@@ -151,84 +165,46 @@ class PollController extends Controller
         ]);
     }
 
-    public function active(Request $request): JsonResponse
+    public function activePolls(): JsonResponse
     {
-        $user = $request->user() ?? auth()->user();
-        $voterToken = $request->input('voter_token');
+        $polls = Poll::active()
+            ->select(['id', 'question', 'title', 'poll_type', 'public_token', 'duration_minutes', 'started_at', 'anonymous', 'allow_multiple_votes', 'created_at'])
+            ->withCount('options')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        if ($user && $user->isStudent() && $user->schoolId()) {
-            $polls = $this->pollService->getActivePollsBySchool($user);
+        return response()->json([
+            'polls' => $polls,
+        ]);
+    }
 
-            return response()->json([
-                'polls' => PollResource::collection($polls),
-            ]);
-        }
-
-        if ($user && $user->isTeacher() && $user->schoolId()) {
-            $polls = $this->pollService->getActivePollsBySchool($user);
-
-            return response()->json([
-                'polls' => PollResource::collection($polls),
-            ]);
-        }
-
-        $poll = $this->pollService->getActivePoll();
+    public function showByToken(string $token): JsonResponse
+    {
+        $poll = Poll::byPublicToken($token)->with('options')->first();
 
         if (! $poll) {
-            return response()->json(['message' => 'No active poll available.'], 404);
+            return response()->json(['message' => 'Poll not found.'], 404);
         }
 
-        $poll->load('options');
-
-        if ($user?->isStudent()) {
-            $hasVoted = $poll->votes()->where('student_id', $user->id)->exists();
-        } elseif ($voterToken) {
-            $hasVoted = $poll->votes()->where('voter_token', $voterToken)->exists();
-        } else {
-            $hasVoted = false;
+        if (! $poll->isActive()) {
+            return response()->json(['message' => 'This poll is not currently active.'], 404);
         }
 
         return response()->json([
             'poll' => new PollResource($poll),
-            'hasVoted' => $hasVoted,
         ]);
     }
 
-    public function schoolActive(Request $request): JsonResponse
+    public function publicResults(string $token): JsonResponse
     {
-        $user = $request->user();
+        $poll = Poll::byPublicToken($token)->with('options.votes')->first();
 
-        if (! $user->schoolId()) {
-            return response()->json(['message' => 'You are not assigned to a school.'], 403);
-        }
-
-        $polls = $this->pollService->getActivePollsBySchool($user);
-
-        return response()->json([
-            'polls' => PollResource::collection($polls),
-        ]);
-    }
-
-    public function results(Poll $poll): PollResultResource
-    {
-        $results = $this->pollService->getResults($poll);
-
-        return new PollResultResource($results);
-    }
-
-    public function status(UpdatePollStatusRequest $request, Poll $poll): JsonResponse
-    {
-        $requestedStatus = $request->validated()['status'];
-
-        if ($requestedStatus === 'active') {
-            $poll = $this->pollService->start($poll);
-        } else {
-            $poll = $this->pollService->end($poll);
+        if (! $poll) {
+            return response()->json(['message' => 'Poll not found.'], 404);
         }
 
         return response()->json([
-            'message' => "Poll {$requestedStatus} successfully.",
-            'poll' => new PollResource($poll),
+            'results' => new PollResultResource($poll),
         ]);
     }
 }

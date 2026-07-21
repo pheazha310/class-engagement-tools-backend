@@ -8,9 +8,6 @@ use App\Models\User;
 use App\Models\Vote;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Vote>
- */
 class VoteFactory extends Factory
 {
     protected $model = Vote::class;
@@ -19,8 +16,9 @@ class VoteFactory extends Factory
     {
         return [
             'poll_id' => Poll::factory(),
-            'option_id' => PollOption::factory(),
-            'student_id' => User::factory(),
+            'poll_option_id' => PollOption::factory(),
+            'user_id' => User::factory(),
+            'guest_token' => null,
         ];
     }
 }

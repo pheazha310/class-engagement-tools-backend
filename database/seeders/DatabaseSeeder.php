@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
         $teacher = User::firstOrCreate(
             ['email' => 'teacher@example.com'],
             [
-                'id' => fake()->uuid(),
                 'name' => 'Test Teacher',
                 'role' => 'teacher',
                 'password' => Hash::make('password'),
@@ -33,7 +32,7 @@ class DatabaseSeeder extends Seeder
         $poll = Poll::factory()
             ->active()
             ->create([
-                'teacher_id' => $teacher->id,
+                'created_by' => $teacher->id,
                 'question' => 'What is your favorite Laravel feature?',
             ]);
 
@@ -42,20 +41,22 @@ class DatabaseSeeder extends Seeder
             'Blade Templating',
             'Artisan CLI',
             'Queues & Jobs',
-        ])->map(fn (string $text) => PollOption::factory()->create([
+        ])->map(fn (string $text, int $i) => PollOption::factory()->create([
             'poll_id' => $poll->id,
             'option_text' => $text,
+            'display_order' => $i,
         ]));
 
         $students->each(function (User $student) use ($poll, $options): void {
             if (fake()->boolean(80)) {
                 Vote::factory()->create([
                     'poll_id' => $poll->id,
-                    'option_id' => $options->random()->id,
-                    'student_id' => $student->id,
+                    'poll_option_id' => $options->random()->id,
+                    'user_id' => $student->id,
                 ]);
             }
         });
+
         $this->call([
             RolePermissionSeeder::class,
             AdminUserSeeder::class,

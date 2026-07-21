@@ -6,9 +6,6 @@ use App\Models\Poll;
 use App\Models\PollOption;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<PollOption>
- */
 class PollOptionFactory extends Factory
 {
     protected $model = PollOption::class;
@@ -18,6 +15,7 @@ class PollOptionFactory extends Factory
         return [
             'poll_id' => Poll::factory(),
             'option_text' => fake()->word(),
+            'display_order' => fake()->numberBetween(0, 10),
         ];
     }
 }

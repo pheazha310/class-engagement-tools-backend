@@ -74,12 +74,12 @@ class User extends Authenticatable implements PasskeyUser
 
     public function polls(): HasMany
     {
-        return $this->hasMany(Poll::class, 'teacher_id');
+        return $this->hasMany(Poll::class, 'created_by');
     }
 
     public function votes(): HasMany
     {
-        return $this->hasMany(Vote::class, 'student_id');
+        return $this->hasMany(Vote::class, 'user_id');
     }
 
     public function schoolId(): ?int
