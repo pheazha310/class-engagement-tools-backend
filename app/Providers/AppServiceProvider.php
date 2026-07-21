@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Repositories\Contracts\CountryRepositoryInterface;
 use App\Repositories\Contracts\DistrictRepositoryInterface;
+use App\Repositories\Contracts\GameHistoryRepositoryInterface;
 use App\Repositories\Contracts\PollRepositoryInterface;
 use App\Repositories\Contracts\ProvinceRepositoryInterface;
 use App\Repositories\Contracts\SchoolRepositoryInterface;
@@ -11,6 +12,7 @@ use App\Repositories\Contracts\SchoolRequestRepositoryInterface;
 use App\Repositories\Contracts\VoteRepositoryInterface;
 use App\Repositories\CountryRepository;
 use App\Repositories\DistrictRepository;
+use App\Repositories\GameHistoryRepository;
 use App\Repositories\PollRepository;
 use App\Repositories\ProvinceRepository;
 use App\Repositories\SchoolRepository;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DistrictRepositoryInterface::class, DistrictRepository::class);
         $this->app->bind(SchoolRepositoryInterface::class, SchoolRepository::class);
         $this->app->bind(SchoolRequestRepositoryInterface::class, SchoolRequestRepository::class);
+        $this->app->bind(GameHistoryRepositoryInterface::class, GameHistoryRepository::class);
     }
 
     public function boot(): void

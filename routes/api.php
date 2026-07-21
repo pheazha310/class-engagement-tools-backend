@@ -30,6 +30,7 @@ Route::post('game-sessions/generate-questions', [GameSessionController::class, '
 Route::get('game-sessions/join/{joinCode}', [GameSessionController::class, 'showByJoinCode'])->name('game-sessions.join');
 Route::post('game-sessions/{gameSession}/validate-answer', [GameSessionController::class, 'validateAnswer'])->name('game-sessions.validate-answer');
 Route::get('game-sessions/{gameSession}/leaderboard', [GameSessionController::class, 'leaderboard'])->name('game-sessions.leaderboard');
+Route::post('game-sessions/{gameSession}/end', [GameSessionController::class, 'end'])->name('game-sessions.end');
 Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
