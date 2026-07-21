@@ -107,6 +107,9 @@ Route::post('polls/{poll}/vote', [VoteController::class, 'vote']);
 // Soundboard routes — public (no auth required)
 Route::get('sounds', [SoundController::class, 'index']);
 
+// Soundboard routes — authenticated (teacher)
+Route::post('sounds/{sound}/play', [SoundController::class, 'play'])->middleware(['web', 'auth:sanctum']);
+
 // Poll routes — authenticated (teacher/admin)
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);

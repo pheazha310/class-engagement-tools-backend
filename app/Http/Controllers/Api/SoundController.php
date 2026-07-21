@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\SoundPlayed;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SoundResource;
 use App\Models\Sound;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class SoundController extends Controller
@@ -17,5 +19,22 @@ class SoundController extends Controller
             ->get();
 
         return SoundResource::collection($sounds);
+    }
+
+    public function play(Sound $sound): JsonResponse
+    {
+        $event = SoundPlayed::fromModel($sound);
+
+        broadcast($event);
+
+        return response()->json([
+            'message' => 'Sound played successfully.',
+            'data' => [
+                'soundId' => $sound->id,
+                'soundName' => $sound->name,
+                'audioUrl' => $sound->audio_url,
+                'playedAt' => now()->toISOString(),
+            ],
+        ]);
     }
 }
