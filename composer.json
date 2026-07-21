@@ -24,7 +24,6 @@
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.2",
-        "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "laravel/sail": "^1.53",
@@ -56,7 +55,9 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "@php artisan dev"
+            "start /B php artisan serve --host=localhost",
+            "start /B php artisan queue:listen --tries=1 --timeout=0",
+            "npm run dev"
         ],
         "lint": [
             "pint --parallel"
