@@ -5,6 +5,9 @@ use App\Http\Controllers\Api\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\Admin\SchoolController as AdminSchoolController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Classroom\ClassroomQuizController;
+use App\Http\Controllers\Api\Classroom\ClassroomRankingController;
+use App\Http\Controllers\Api\Classroom\ClassroomSubmissionController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DistrictController;
 use App\Http\Controllers\Api\GameSessionController;
@@ -66,6 +69,27 @@ Route::get('quizzes/{quiz}/rankings', [QuizRankingController::class, 'index']);
 // Report routes — public (no auth required)
 Route::get('quizzes/{quiz}/report/pdf', [QuizReportController::class, 'exportPdf']);
 Route::get('quizzes/{quiz}/report/excel', [QuizReportController::class, 'exportExcel']);
+
+// ==============================
+// Classroom Quiz API (v1)
+// Matches frontend Classroom Quiz module spec
+// ==============================
+Route::prefix('v1/classroom')->group(function () {
+    // Quiz CRUD
+    Route::get('quizzes', [ClassroomQuizController::class, 'index']);
+    Route::post('quizzes', [ClassroomQuizController::class, 'store']);
+    Route::get('quizzes/{quiz}', [ClassroomQuizController::class, 'show']);
+    Route::put('quizzes/{quiz}', [ClassroomQuizController::class, 'update']);
+    Route::delete('quizzes/{quiz}', [ClassroomQuizController::class, 'destroy']);
+
+    // Submissions
+    Route::post('submissions', [ClassroomSubmissionController::class, 'store']);
+    Route::get('submissions', [ClassroomSubmissionController::class, 'index']);
+    Route::get('submissions/check', [ClassroomSubmissionController::class, 'check']);
+
+    // Rankings
+    Route::get('rankings/{quiz}', [ClassroomRankingController::class, 'index']);
+});
 
 // Public poll routes (no auth required)
 Route::get('polls/active', [PollController::class, 'active']);

@@ -14,7 +14,12 @@ class Quiz extends Model
     /** @use HasFactory<QuizFactory> */
     use HasFactory, HasUuids;
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'teacher_id',
         'title',
         'description',

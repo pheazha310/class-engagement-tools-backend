@@ -10,7 +10,12 @@ class Question extends Model
 {
     use HasUuids;
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'id',
         'quiz_id',
         'question_text',
         'question_type',

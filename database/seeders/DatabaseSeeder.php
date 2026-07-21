@@ -61,6 +61,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
             WheelThemeSeeder::class,
+            ClassroomQuizSeeder::class,
         ]);
     }
 }
