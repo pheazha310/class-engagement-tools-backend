@@ -14,6 +14,9 @@ export type AdminUserListItem = {
     email: string;
     email_verified_at: string | null;
     roles: string[];
+    school_name: string;
+    country_name: string;
+    province_name: string;
 };
 
 export type AdminRoleListItem = {

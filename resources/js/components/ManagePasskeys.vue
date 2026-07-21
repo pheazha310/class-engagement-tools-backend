@@ -18,7 +18,7 @@ withDefaults(defineProps<Props>(), {
 });
 
 const handleDelete = (id: number, onError: () => void) => {
-    router.delete(destroy.url(id), {
+    router.delete(destroy.url(String(id)), {
         preserveScroll: true,
         onError,
     });

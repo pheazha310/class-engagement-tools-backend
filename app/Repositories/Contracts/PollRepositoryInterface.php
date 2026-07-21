@@ -13,6 +13,12 @@ interface PollRepositoryInterface
 
     public function findActive(): ?Poll;
 
+    public function findActiveBySchool(int $schoolId): ?Poll;
+
+    public function findActivePollsBySchool(int $schoolId): iterable;
+
+    public function findByRoomCode(string $roomCode): ?Poll;
+
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator;
 
     public function create(array $data): Poll;

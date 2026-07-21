@@ -17,6 +17,8 @@ class StorePollRequest extends FormRequest
             'question' => ['required', 'string', 'max:500'],
             'options' => ['required', 'array', 'min:2', 'max:10'],
             'options.*' => ['required', 'string', 'max:255', 'distinct'],
+            'is_multiple_choice' => ['sometimes', 'boolean'],
+            'duration_minutes' => ['sometimes', 'integer', 'min:1', 'max:120'],
         ];
     }
 
@@ -28,6 +30,7 @@ class StorePollRequest extends FormRequest
             'options.min' => 'A poll must have at least 2 options.',
             'options.max' => 'A poll can have at most 10 options.',
             'options.*.distinct' => 'Duplicate options are not allowed.',
+            'duration_minutes.max' => 'Maximum duration is 120 minutes.',
         ];
     }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, MapPin, ShieldCheck, Users } from '@lucide/vue';
+import { LayoutGrid, ShieldCheck, Users } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,9 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { index as locationsIndex } from '@/routes/admin/locations';
-import { index as rolesIndex } from '@/routes/admin/roles';
-import { index as usersIndex } from '@/routes/admin/users';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -28,18 +26,13 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Users',
-        href: usersIndex(),
+        href: adminDashboard({ any: 'users' }),
         icon: Users,
     },
     {
         title: 'Roles',
-        href: rolesIndex(),
+        href: adminDashboard({ any: 'roles' }),
         icon: ShieldCheck,
-    },
-    {
-        title: 'Locations',
-        href: locationsIndex(),
-        icon: MapPin,
     },
 ];
 

@@ -23,6 +23,21 @@ class PollRepository implements PollRepositoryInterface
         return Poll::with('options')->active()->first();
     }
 
+    public function findActiveBySchool(int $schoolId): ?Poll
+    {
+        return Poll::with('options')->active()->bySchool($schoolId)->first();
+    }
+
+    public function findActivePollsBySchool(int $schoolId): iterable
+    {
+        return Poll::with('options')->active()->bySchool($schoolId)->latest()->get();
+    }
+
+    public function findByRoomCode(string $roomCode): ?Poll
+    {
+        return Poll::with('options')->byRoomCode($roomCode)->first();
+    }
+
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator
     {
         return Poll::with('options')

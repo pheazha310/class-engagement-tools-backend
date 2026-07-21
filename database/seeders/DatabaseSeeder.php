@@ -14,10 +14,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(LocationSeeder::class);
+        $this->call(LocationSchoolSeeder::class);
 
         $teacher = User::firstOrCreate(
             ['email' => 'teacher@example.com'],
             [
+                'id' => fake()->uuid(),
                 'name' => 'Test Teacher',
                 'role' => 'teacher',
                 'password' => Hash::make('password'),
@@ -59,6 +61,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
             WheelThemeSeeder::class,
+            ClassroomQuizSeeder::class,
         ]);
     }
 }

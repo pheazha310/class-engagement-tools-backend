@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('school_requests', function (Blueprint $table) {
             $table->id();
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('school_name');
             $table->string('address')->nullable();
             $table->string('phone')->nullable();

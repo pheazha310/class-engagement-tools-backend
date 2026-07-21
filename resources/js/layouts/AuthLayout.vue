@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AuthLayout from '@/layouts/auth/AuthSimpleLayout.vue';
+import AuthCardLayout from '@/layouts/auth/AuthCardLayout.vue';
 
 const { title = '', description = '' } = defineProps<{
     title?: string;
@@ -8,7 +8,7 @@ const { title = '', description = '' } = defineProps<{
 </script>
 
 <template>
-    <AuthLayout :title="title" :description="description">
+    <AuthCardLayout :title="title" :description="description">
         <slot />
-    </AuthLayout>
+    </AuthCardLayout>
 </template>

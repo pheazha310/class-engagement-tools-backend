@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('quiz_submissions', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('quiz_id')->constrained('quizzes')->cascadeOnDelete();
+            $table->string('student_name');
+            $table->integer('score');
+            $table->float('percentage');
+            $table->integer('time_taken'); // seconds
+            $table->dateTime('submitted_at');
+            $table->string('status'); // pass, fail
+            $table->string('class_name')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('quiz_submissions');
+    }
+};

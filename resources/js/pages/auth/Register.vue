@@ -89,10 +89,46 @@ defineOptions({
                 <InputError :message="errors.password_confirmation" />
             </div>
 
+            <div class="grid gap-2">
+                <Label for="country_name">Country</Label>
+                <Input
+                    id="country_name"
+                    type="text"
+                    :tabindex="5"
+                    autocomplete="country-name"
+                    name="country_name"
+                    placeholder="Country"
+                />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="province_name">Province</Label>
+                <Input
+                    id="province_name"
+                    type="text"
+                    :tabindex="6"
+                    autocomplete="address-level1"
+                    name="province_name"
+                    placeholder="Province"
+                />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="school_name">School Name</Label>
+                <Input
+                    id="school_name"
+                    type="text"
+                    :tabindex="7"
+                    autocomplete="organization"
+                    name="school_name"
+                    placeholder="School Name"
+                />
+            </div>
+
             <Button
                 type="submit"
                 class="mt-2 w-full"
-                tabindex="5"
+                tabindex="8"
                 :disabled="processing"
                 data-test="register-user-button"
             >

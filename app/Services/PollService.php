@@ -23,12 +23,25 @@ readonly class PollService
         return $this->pollRepository->findById($id);
     }
 
+    public function findByRoomCode(string $roomCode): ?Poll
+    {
+        return $this->pollRepository->findByRoomCode($roomCode);
+    }
+
     public function create(array $data, User $teacher): Poll
     {
         $poll = $this->pollRepository->create([
             'teacher_id' => $teacher->id,
+            'school_id' => $teacher->schoolId(),
+            'province_id' => $teacher->provinceId(),
             'question' => $data['question'],
             'status' => 'draft',
+            'is_multiple_choice' => $data['is_multiple_choice'] ?? false,
+            'duration_minutes' => $data['duration_minutes'] ?? null,
+            'is_anonymous' => $data['is_anonymous'] ?? false,
+            'is_quiz' => $data['is_quiz'] ?? false,
+            'is_open_text' => $data['is_open_text'] ?? false,
+            'max_points' => $data['max_points'] ?? null,
         ]);
 
         $poll->options()->createMany(
@@ -42,6 +55,12 @@ readonly class PollService
     {
         $poll = $this->pollRepository->update($poll, [
             'question' => $data['question'] ?? $poll->question,
+            'is_multiple_choice' => $data['is_multiple_choice'] ?? $poll->is_multiple_choice,
+            'duration_minutes' => $data['duration_minutes'] ?? $poll->duration_minutes,
+            'is_anonymous' => $data['is_anonymous'] ?? $poll->is_anonymous,
+            'is_quiz' => $data['is_quiz'] ?? $poll->is_quiz,
+            'is_open_text' => $data['is_open_text'] ?? $poll->is_open_text,
+            'max_points' => $data['max_points'] ?? $poll->max_points,
         ]);
 
         if (isset($data['options'])) {
@@ -72,6 +91,22 @@ readonly class PollService
     public function getActivePoll(): ?Poll
     {
         return $this->pollRepository->findActive();
+    }
+
+    public function getActivePollBySchool(int $schoolId): ?Poll
+    {
+        return $this->pollRepository->findActiveBySchool($schoolId);
+    }
+
+    public function getActivePollsBySchool(User $user): iterable
+    {
+        $schoolId = $user->schoolId();
+
+        if (! $schoolId) {
+            return collect();
+        }
+
+        return $this->pollRepository->findActivePollsBySchool($schoolId);
     }
 
     public function getResults(Poll $poll): array

@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('polls', function (Blueprint $table) {
             $table->id();
-            $table->uuid('teacher_id');
-            $table->foreign('teacher_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreignUuid('teacher_id')->constrained('users')->cascadeOnDelete();
             $table->string('question');
             $table->string('status')->default('draft');
             $table->timestamp('started_at')->nullable();

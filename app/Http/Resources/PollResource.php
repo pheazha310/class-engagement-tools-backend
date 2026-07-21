@@ -14,12 +14,18 @@ class PollResource extends JsonResource
         return [
             'id' => $this->id,
             'teacher_id' => $this->teacher_id,
+            'school_id' => $this->school_id,
+            'province_id' => $this->province_id,
             'question' => $this->question,
+            'room_code' => $this->room_code,
             'status' => $this->status,
+            'is_multiple_choice' => $this->is_multiple_choice,
+            'duration_minutes' => $this->duration_minutes,
             'started_at' => $this->started_at?->toISOString(),
             'ended_at' => $this->ended_at?->toISOString(),
             'options' => PollOptionResource::collection($this->whenLoaded('options')),
             'total_votes' => $this->when($this->relationLoaded('votes'), fn () => $this->votes->count()),
+            'participant_count' => $this->when($this->relationLoaded('votes'), fn () => $this->participantCount()),
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
         ];

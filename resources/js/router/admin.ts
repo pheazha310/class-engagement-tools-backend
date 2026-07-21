@@ -1,0 +1,94 @@
+import { createRouter, createMemoryHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+
+const routes: RouteRecordRaw[] = [
+    {
+        path: '/admin/dashboard',
+        name: 'admin.dashboard',
+        component: () => import('@/pages/admin/AdminDashboardShell.vue'),
+        children: [
+            {
+                path: '',
+                name: 'admin.dashboard.overview',
+                component: () => import('@/pages/admin/DashboardOverview.vue'),
+            },
+            // Users
+            {
+                path: 'users',
+                name: 'admin.users',
+                component: () => import('@/pages/admin/users/Index.vue'),
+            },
+            {
+                path: 'users/create',
+                name: 'admin.users.create',
+                component: () => import('@/pages/admin/users/Create.vue'),
+            },
+            {
+                path: 'users/:id/edit',
+                name: 'admin.users.edit',
+                component: () => import('@/pages/admin/users/Edit.vue'),
+                props: true,
+            },
+            // Roles
+            {
+                path: 'roles',
+                name: 'admin.roles',
+                component: () => import('@/pages/admin/roles/Index.vue'),
+            },
+            {
+                path: 'roles/create',
+                name: 'admin.roles.create',
+                component: () => import('@/pages/admin/roles/Create.vue'),
+            },
+            {
+                path: 'roles/:id/edit',
+                name: 'admin.roles.edit',
+                component: () => import('@/pages/admin/roles/Edit.vue'),
+                props: true,
+            },
+            // Schools
+            {
+                path: 'schools',
+                name: 'admin.schools',
+                component: () => import('@/pages/admin/schools/Index.vue'),
+            },
+            // Classes
+            {
+                path: 'classes',
+                name: 'admin.classes',
+                component: () => import('@/pages/admin/classes/Index.vue'),
+            },
+            // Activity Log
+            {
+                path: 'activity',
+                name: 'admin.activity',
+                component: () => import('@/pages/admin/activity/Index.vue'),
+            },
+            // Reports
+            {
+                path: 'reports',
+                name: 'admin.reports',
+                component: () => import('@/pages/admin/reports/Index.vue'),
+            },
+            // Settings
+            {
+                path: 'settings',
+                name: 'admin.settings',
+                component: () => import('@/pages/admin/settings/Index.vue'),
+            },
+            // Security
+            {
+                path: 'security',
+                name: 'admin.security',
+                component: () => import('@/pages/admin/security/Index.vue'),
+            },
+        ],
+    },
+]
+
+const adminRouter = createRouter({
+    history: createMemoryHistory(),
+    routes,
+})
+
+export default adminRouter

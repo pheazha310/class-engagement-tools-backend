@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::table('school_requests', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
-            $table->uuid('user_id')->nullable()->change();
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreignUuid('user_id')->nullable()->change()->constrained('users')->nullOnDelete();
             $table->string('email')->nullable()->after('user_id');
         });
     }
@@ -19,10 +18,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('school_requests', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
             $table->dropColumn('email');
-            $table->uuid('user_id')->nullable(false)->change();
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->dropForeign(['user_id']);
+            $table->foreignUuid('user_id')->nullable(false)->change()->constrained('users')->cascadeOnDelete();
         });
     }
 };
