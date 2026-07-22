@@ -7,9 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGameSessionRequest;
 use App\Http\Requests\ValidateGameAnswerRequest;
 use App\Http\Resources\GameAnswerResource;
+use App\Http\Resources\GameHistoryResource;
 use App\Http\Resources\GameSessionResource;
 use App\Models\GameAnswer;
 use App\Models\GameSession;
+use App\Repositories\Contracts\GameHistoryRepositoryInterface;
 use App\Services\GameQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,10 @@ use Illuminate\Support\Str;
 
 class GameSessionController extends Controller
 {
+    public function __construct(
+        private readonly GameHistoryRepositoryInterface $gameHistoryRepository
+    ) {}
+
     public function index(): JsonResponse
     {
         $user = Auth::user();
@@ -160,6 +166,27 @@ class GameSessionController extends Controller
 
         return response()->json([
             'leaderboard' => $scores,
+        ], Response::HTTP_OK);
+    }
+
+    public function end(Request $request, GameSession $gameSession): JsonResponse
+    {
+        if (! $gameSession->isActive()) {
+            return response()->json([
+                'message' => 'Game session is not active or has already ended.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $gameSession->update([
+            'status' => 'ended',
+            'ended_at' => now(),
+        ]);
+
+        $gameHistory = $this->gameHistoryRepository->createFromSession($gameSession->fresh());
+
+        return response()->json([
+            'message' => 'Game session ended successfully.',
+            'game_history' => new GameHistoryResource($gameHistory),
         ], Response::HTTP_OK);
     }
 }

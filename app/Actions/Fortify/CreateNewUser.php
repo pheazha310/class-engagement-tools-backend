@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Spatie\Permission\Models\Role;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -39,6 +40,7 @@ class CreateNewUser implements CreatesNewUsers
             'role' => $input['role'] ?? 'student',
         ]);
 
+        Role::findOrCreate($user->role, config('auth.defaults.guard', 'web'));
         $user->assignRole($user->role);
 
         $profileData = $this->buildProfileData($input);

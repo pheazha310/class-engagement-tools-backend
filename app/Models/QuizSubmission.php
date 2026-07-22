@@ -13,19 +13,25 @@ class QuizSubmission extends Model
     protected $fillable = [
         'quiz_id',
         'student_name',
+        'class_name',
+        'answers',
         'score',
+        'total_points',
         'percentage',
+        'passing_score',
         'time_taken',
         'submitted_at',
         'status',
-        'class_name',
     ];
 
     protected function casts(): array
     {
         return [
+            'answers' => 'array',
             'score' => 'integer',
+            'total_points' => 'integer',
             'percentage' => 'float',
+            'passing_score' => 'integer',
             'time_taken' => 'integer',
             'submitted_at' => 'datetime',
         ];

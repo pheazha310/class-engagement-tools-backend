@@ -17,7 +17,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (! Auth::guard('web')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -32,6 +32,10 @@ class AuthController extends Controller
 
     public function user(Request $request): JsonResponse
     {
+        if (! $request->user()) {
+            return response()->json(['user' => null]);
+        }
+
         return response()->json([
             'user' => $this->formatUser($request->user()),
         ]);
