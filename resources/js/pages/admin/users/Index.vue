@@ -88,6 +88,9 @@ async function fetchUsers(page = 1) {
             total: response.data.total,
             links: response.data.links,
         }
+    } else if (response.error) {
+        console.error('[Users] API error:', response.error)
+        toast.error(response.error.message || 'Failed to load users')
     }
     loading.value = false
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-<<<<<<< HEAD
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Shield } from '@lucide/vue';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
