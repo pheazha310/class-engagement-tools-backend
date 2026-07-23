@@ -52,6 +52,11 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
+    protected function getDefaultGuardName(): string
+    {
+        return 'web';
+    }
+
     public function isTeacher(): bool
     {
         return $this->role === 'teacher';

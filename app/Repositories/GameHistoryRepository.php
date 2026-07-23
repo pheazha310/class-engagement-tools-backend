@@ -16,7 +16,7 @@ class GameHistoryRepository implements GameHistoryRepositoryInterface
         return GameHistory::with('gameSession', 'teacher')->latest()->paginate($perPage);
     }
 
-    public function findById(int $id): ?GameHistory
+    public function findById(int|string $id): ?GameHistory
     {
         return GameHistory::with('gameSession', 'teacher')->find($id);
     }

@@ -41,7 +41,9 @@ class PollController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        foreach ($data['options'] as $order => $optionText) {
+        $resolvedOptions = $this->resolveOptions($data['poll_type'], $data['options'] ?? []);
+
+        foreach ($resolvedOptions as $order => $optionText) {
             PollOption::create([
                 'poll_id' => $poll->id,
                 'option_text' => $optionText,
@@ -55,6 +57,19 @@ class PollController extends Controller
             'message' => 'Poll created successfully.',
             'poll' => new PollResource($poll),
         ], 201);
+    }
+
+    private function resolveOptions(string $pollType, array $provided): array
+    {
+        if ($pollType === 'yes_no') {
+            return ['Yes', 'No'];
+        }
+
+        if ($pollType === 'rating') {
+            return ['1', '2', '3', '4', '5'];
+        }
+
+        return $provided;
     }
 
     public function show(Request $request, Poll $poll): JsonResponse
@@ -86,8 +101,9 @@ class PollController extends Controller
         ]);
 
         if (isset($data['options'])) {
+            $resolvedOptions = $this->resolveOptions($data['poll_type'] ?? $poll->poll_type, $data['options']);
             $poll->options()->delete();
-            foreach ($data['options'] as $order => $optionText) {
+            foreach ($resolvedOptions as $order => $optionText) {
                 PollOption::create([
                     'poll_id' => $poll->id,
                     'option_text' => $optionText,

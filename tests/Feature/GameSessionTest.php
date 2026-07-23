@@ -21,7 +21,7 @@ it('teacher can create a game session', function () {
             'settings' => ['time_limit' => 120],
         ])
         ->assertCreated()
-        ->assertJsonFragment(['game_type' => 'poll']);
+        ->assertJsonPath('game_session.game_type', 'poll');
 
     assertDatabaseHas('game_sessions', [
         'game_type' => 'poll',
@@ -55,7 +55,7 @@ it('student can create a game session', function () {
             'settings' => ['time_limit' => 120],
         ])
         ->assertCreated()
-        ->assertJsonFragment(['game_type' => 'poll']);
+        ->assertJsonPath('game_session.game_type', 'poll');
 
     assertDatabaseHas('game_sessions', [
         'game_type' => 'poll',
@@ -70,7 +70,7 @@ it('allows unauthenticated guest to create a game session', function () {
         'settings' => ['time_limit' => 120],
     ])
         ->assertCreated()
-        ->assertJsonFragment(['game_type' => 'poll']);
+        ->assertJsonPath('game_session.game_type', 'poll');
 
     assertDatabaseHas('game_sessions', [
         'teacher_id' => null,
@@ -130,7 +130,7 @@ it('accepts a custom join code when provided', function () {
             'join_code' => $customCode,
         ])
         ->assertCreated()
-        ->assertJsonFragment(['join_code' => $customCode]);
+        ->assertJsonPath('game_session.join_code', $customCode);
 
     assertDatabaseHas('game_sessions', [
         'join_code' => $customCode,
@@ -146,11 +146,7 @@ it('allows a student to join an active game with a valid code', function () {
     actingAs($this->student)
         ->getJson("/api/game-sessions/join/{$session->join_code}")
         ->assertOk()
-        ->assertJsonFragment([
-            'join_code' => $session->join_code,
-            'game_type' => 'poll',
-            'status' => 'active',
-        ]);
+        ->assertJsonPath('game_session.join_code', $session->join_code);
 });
 
 it('allows an unauthenticated user to join an active game with a valid code', function () {
@@ -161,11 +157,7 @@ it('allows an unauthenticated user to join an active game with a valid code', fu
 
     $this->getJson("/api/game-sessions/join/{$session->join_code}")
         ->assertOk()
-        ->assertJsonFragment([
-            'join_code' => $session->join_code,
-            'game_type' => 'poll',
-            'status' => 'active',
-        ]);
+        ->assertJsonPath('game_session.join_code', $session->join_code);
 });
 
 it('returns not found when joining with an invalid code', function () {

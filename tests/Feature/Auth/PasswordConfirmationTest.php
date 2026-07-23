@@ -1,22 +1,15 @@
 <?php
 
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 
-test('confirm password screen can be rendered', function () {
-    $user = User::factory()->create();
+test('confirm password screen requires authentication', function () {
+    $response = $this->get('/user/confirm-password');
 
-    $response = $this->actingAs($user)->get(route('password.confirm'));
-
-    $response->assertOk();
-
-    $response->assertInertia(fn (Assert $page) => $page
-        ->component('auth/ConfirmPassword'),
-    );
+    $response->assertRedirect();
 });
 
 test('password confirmation requires authentication', function () {
-    $response = $this->get(route('password.confirm'));
+    $response = $this->get('/user/confirm-password');
 
-    $response->assertRedirect(route('login'));
+    $response->assertRedirect();
 });

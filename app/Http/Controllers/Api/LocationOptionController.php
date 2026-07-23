@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
-use App\Models\Location;
 use App\Models\Province;
+use App\Models\School;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -48,16 +48,15 @@ class LocationOptionController extends Controller
             ]);
         }
 
-        $school = Location::query()
-            ->whereRaw('lower(country) = ?', [Str::lower($country->name)])
-            ->whereRaw('lower(province) = ?', [Str::lower($province->name)])
+        $school = School::query()
+            ->where('province_id', $province->id)
             ->whereRaw('lower(school_name) = ?', [Str::lower($schoolName)])
             ->first();
 
         if (! $school) {
-            $school = Location::create([
-                'country' => $country->name,
-                'province' => $province->name,
+            $school = School::create([
+                'country_id' => $country->id,
+                'province_id' => $province->id,
                 'school_name' => $schoolName,
             ]);
         }

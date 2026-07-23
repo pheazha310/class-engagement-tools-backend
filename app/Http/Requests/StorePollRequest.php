@@ -22,7 +22,7 @@ class StorePollRequest extends FormRequest
             'allow_multiple_votes' => ['boolean'],
             'anonymous' => ['boolean'],
             'show_results' => ['boolean'],
-            'options' => ['required', 'array', 'min:2', 'max:20'],
+            'options' => ['array', 'max:20'],
             'options.*' => ['required', 'string', 'max:255', 'distinct'],
         ];
     }
@@ -30,8 +30,6 @@ class StorePollRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'options.required' => 'At least 2 options are required.',
-            'options.min' => 'At least 2 options are required.',
             'options.max' => 'Maximum 20 options allowed.',
             'options.*.distinct' => 'Duplicate options are not allowed.',
         ];

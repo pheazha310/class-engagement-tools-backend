@@ -30,7 +30,7 @@ class VoteController extends Controller
         }
 
         $user = $request->user();
-        $guestToken = $request->validated()['guest_token'];
+        $guestToken = $request->validated()['guest_token'] ?? null;
 
         if ($user) {
             if (! $user->isStudent()) {

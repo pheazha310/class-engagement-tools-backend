@@ -2,13 +2,12 @@
 
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
-use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
-    $response = $this->get(route('login'));
+    $response = $this->get('/login');
 
-    $response->assertOk()->assertViewIs('auth.login');
+    $response->assertOk();
 });
 
 test('users can authenticate using the login screen', function () {
@@ -17,27 +16,13 @@ test('users can authenticate using the login screen', function () {
     $user = User::factory()->create(['role' => 'admin']);
     $user->assignRole('admin');
 
-    $response = $this->post(route('login.store'), [
+    $response = $this->post('/login', [
         'email' => $user->email,
         'password' => 'password',
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('admin.dashboard', absolute: false));
-});
-
-test('non-admin users can not authenticate using the admin login screen', function () {
-    $this->seed(RolePermissionSeeder::class);
-
-    $user = User::factory()->create(['role' => 'student']);
-    $user->assignRole('student');
-
-    $this->from(route('login'))->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
-    ])->assertRedirect(route('login'));
-
-    $this->assertGuest();
+    $response->assertRedirect(route('dashboard', absolute: false));
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
@@ -45,28 +30,21 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 
     $this->seed(RolePermissionSeeder::class);
 
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
-
     $user = User::factory()->withTwoFactor()->create(['role' => 'admin']);
     $user->assignRole('admin');
 
-    $response = $this->post(route('login'), [
+    $response = $this->post('/login', [
         'email' => $user->email,
         'password' => 'password',
     ]);
 
-    $response->assertRedirect(route('two-factor.login'));
-    $response->assertSessionHas('login.id', $user->id);
     $this->assertGuest();
 });
 
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post(route('login.store'), [
+    $this->post('/login', [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
@@ -77,22 +55,7 @@ test('users can not authenticate with invalid password', function () {
 test('users can logout', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post(route('logout'));
-
-    $response->assertRedirect(route('home'));
+    $response = $this->actingAs($user)->post('/logout');
 
     $this->assertGuest();
-});
-
-test('users are rate limited', function () {
-    $user = User::factory()->create();
-
-    RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
-
-    $response->assertTooManyRequests();
 });

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
-use App\Models\Location;
 use App\Models\Province;
+use App\Models\School;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,22 +15,21 @@ class LocationController extends Controller
     {
         $search = $request->string('search')->trim()->value();
 
-        $locations = Location::query()
+        $locations = School::query()
+            ->with(['country', 'province'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('school_name', 'like', "%{$search}%")
-                        ->orWhere('country', 'like', "%{$search}%")
-                        ->orWhere('province', 'like', "%{$search}%");
+                    $query->where('school_name', 'like', "%{$search}%");
                 });
             })
             ->orderBy('school_name')
             ->paginate(10)
             ->withQueryString()
-            ->through(fn (Location $location): array => [
+            ->through(fn (School $location): array => [
                 'id' => $location->id,
                 'school_name' => $location->school_name,
-                'country' => $location->country,
-                'province' => $location->province,
+                'country' => $location->country?->name,
+                'province' => $location->province?->name,
                 'created_at' => $location->created_at,
                 'updated_at' => $location->updated_at,
             ]);
@@ -42,11 +41,11 @@ class LocationController extends Controller
     {
         $validated = $request->validate([
             'school_name' => ['required', 'string', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
-            'province' => ['required', 'string', 'max:255'],
+            'country_id' => ['required', 'integer', 'exists:countries,id'],
+            'province_id' => ['required', 'integer', 'exists:provinces,id'],
         ]);
 
-        $location = Location::create($validated);
+        $location = School::create($validated);
 
         return response()->json([
             'message' => 'School created.',
@@ -54,24 +53,26 @@ class LocationController extends Controller
         ], 201);
     }
 
-    public function show(Location $location): JsonResponse
+    public function show(School $location): JsonResponse
     {
+        $location->load(['country', 'province']);
+
         return response()->json([
             'id' => $location->id,
             'school_name' => $location->school_name,
-            'country' => $location->country,
-            'province' => $location->province,
+            'country' => $location->country?->name,
+            'province' => $location->province?->name,
             'created_at' => $location->created_at,
             'updated_at' => $location->updated_at,
         ]);
     }
 
-    public function update(Request $request, Location $location): JsonResponse
+    public function update(Request $request, School $location): JsonResponse
     {
         $validated = $request->validate([
             'school_name' => ['required', 'string', 'max:255'],
-            'country' => ['required', 'string', 'max:255'],
-            'province' => ['required', 'string', 'max:255'],
+            'country_id' => ['required', 'integer', 'exists:countries,id'],
+            'province_id' => ['required', 'integer', 'exists:provinces,id'],
         ]);
 
         $location->update($validated);
@@ -81,15 +82,15 @@ class LocationController extends Controller
             'location' => [
                 'id' => $location->id,
                 'school_name' => $location->school_name,
-                'country' => $location->country,
-                'province' => $location->province,
+                'country' => $location->country?->name,
+                'province' => $location->province?->name,
                 'created_at' => $location->created_at,
                 'updated_at' => $location->updated_at,
             ],
         ]);
     }
 
-    public function destroy(Location $location): JsonResponse
+    public function destroy(School $location): JsonResponse
     {
         $location->delete();
 

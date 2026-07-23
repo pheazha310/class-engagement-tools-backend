@@ -108,4 +108,12 @@ class Poll extends Model
     {
         return $query->where('status', 'closed');
     }
+
+    public function scopeExpired($query)
+    {
+        return $query->where('status', 'active')
+            ->whereNotNull('started_at')
+            ->whereNotNull('duration_minutes')
+            ->whereRaw('started_at + (duration_minutes * interval \'1 minute\') < now()');
+    }
 }

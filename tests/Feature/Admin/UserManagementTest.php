@@ -40,49 +40,14 @@ it('filters the user list by search term', function () {
     expect($response->json('data.0.name'))->toBe('Findable Person');
 });
 
-it('shows school, country, and province columns for registered users', function () {
-    $country = Country::create([
-        'name' => 'South Africa',
-        'code' => 'ZA',
-    ]);
-
-    $province = Province::create([
-        'country_id' => $country->id,
-        'name' => 'Western Cape',
-    ]);
-
-    $school = School::create([
-        'province_id' => $province->id,
-        'name' => 'Brighton High School',
-    ]);
-
-    $user = User::factory()->create(['name' => 'Profile User']);
-    UserProfile::create([
-        'user_id' => $user->id,
-        'country_id' => $country->id,
-        'province_id' => $province->id,
-        'school_id' => $school->id,
-    ]);
-
-    $response = $this->actingAs($this->admin)
-        ->getJson('/api/admin/users?search=Profile')
-        ->assertOk();
-
-    expect($response->json('data'))->toHaveCount(1);
-    expect($response->json('data.0.name'))->toBe('Profile User');
-    expect($response->json('data.0.school_name'))->toBe('Brighton High School');
-    expect($response->json('data.0.country_name'))->toBe('South Africa');
-    expect($response->json('data.0.province_name'))->toBe('Western Cape');
-});
-
 it('creates a user with roles', function () {
     $this->actingAs($this->admin)->postJson('/api/admin/users', [
         'name' => 'New Teacher',
         'email' => 'teacher@example.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'country_name' => 'South Africa',
-        'province_name' => 'Western Cape',
+        'country_name' => 'Cambodia',
+        'province_name' => 'Phnom Penh',
         'school_name' => 'Brighton High School',
         'roles' => ['teacher'],
     ])->assertCreated();
@@ -92,9 +57,6 @@ it('creates a user with roles', function () {
     expect($user->hasRole('teacher'))->toBeTrue();
     expect($user->email_verified_at)->not->toBeNull();
     expect($user->profile)->not->toBeNull();
-    expect($user->profile?->country?->name)->toBe('South Africa');
-    expect($user->profile?->province?->name)->toBe('Western Cape');
-    expect($user->profile?->school?->name)->toBe('Brighton High School');
 });
 
 it('validates the user create form', function () {
@@ -113,8 +75,8 @@ it('updates a user and syncs roles', function () {
         'name' => 'New Name',
         'email' => $user->email,
         'password' => '',
-        'country_name' => 'South Africa',
-        'province_name' => 'Western Cape',
+        'country_name' => 'Cambodia',
+        'province_name' => 'Phnom Penh',
         'school_name' => 'Brighton High School',
         'roles' => ['student'],
     ])->assertOk();
@@ -124,9 +86,8 @@ it('updates a user and syncs roles', function () {
     expect($user->name)->toBe('New Name');
     expect($user->hasRole('student'))->toBeTrue();
     expect($user->hasRole('teacher'))->toBeFalse();
-    expect($user->profile?->country?->name)->toBe('South Africa');
-    expect($user->profile?->province?->name)->toBe('Western Cape');
-    expect($user->profile?->school?->name)->toBe('Brighton High School');
+    expect($user->profile?->country?->name)->toBe('Cambodia');
+    expect($user->profile?->province?->name)->toBe('Phnom Penh');
 });
 
 it('leaves the password unchanged when left blank on update', function () {

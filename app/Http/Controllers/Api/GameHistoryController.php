@@ -42,7 +42,7 @@ class GameHistoryController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $history = $this->gameHistoryRepository->findById($id);
 
@@ -65,7 +65,7 @@ class GameHistoryController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function export(int $id, string $format): SymfonyResponse
+    public function export(string $id, string $format): SymfonyResponse
     {
         $history = $this->gameHistoryRepository->findById($id);
 

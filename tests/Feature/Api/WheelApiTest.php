@@ -363,7 +363,7 @@ test('unauthenticated user cannot generate share token', function () {
     $wheel = Wheel::factory()->create();
 
     $this->postJson("/api/wheels/{$wheel->id}/share-token")
-        ->assertStatus(403);
+        ->assertStatus(401);
 });
 
 test('public user can view shared wheel with valid token', function () {

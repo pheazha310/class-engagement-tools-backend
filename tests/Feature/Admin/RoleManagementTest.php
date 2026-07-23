@@ -23,7 +23,7 @@ it('lets an admin view the role list', function () {
     $this->actingAs($this->admin)
         ->getJson('/api/admin/roles')
         ->assertOk()
-        ->assertJsonCount(3);
+        ->assertJsonCount(3, 'data');
 });
 
 it('creates a role with permissions', function () {
@@ -67,16 +67,16 @@ it('updates a role and syncs permissions', function () {
 });
 
 it('does not rename the protected admin role but still syncs its permissions', function () {
-    $admin = Role::findByName('admin', 'web');
+    $adminRole = Role::findByName('admin', 'web');
 
-    $this->actingAs($this->admin)->putJson("/api/admin/roles/{$admin->id}", [
+    $this->actingAs($this->admin)->putJson("/api/admin/roles/{$adminRole->id}", [
         'name' => 'super',
         'permissions' => ['view users'],
     ])->assertForbidden();
 
-    $admin->refresh();
+    $adminRole->refresh();
 
-    expect($admin->name)->toBe('admin');
+    expect($adminRole->name)->toBe('admin');
 });
 
 it('deletes a non-protected role', function () {
@@ -90,11 +90,11 @@ it('deletes a non-protected role', function () {
 });
 
 it('refuses to delete the protected admin role', function () {
-    $admin = Role::findByName('admin', 'web');
+    $adminRole = Role::findByName('admin', 'web');
 
     $this->actingAs($this->admin)
-        ->deleteJson("/api/admin/roles/{$admin->id}")
+        ->deleteJson("/api/admin/roles/{$adminRole->id}")
         ->assertForbidden();
 
-    expect(Role::where('id', $admin->id)->exists())->toBeTrue();
+    expect(Role::where('id', $adminRole->id)->exists())->toBeTrue();
 });

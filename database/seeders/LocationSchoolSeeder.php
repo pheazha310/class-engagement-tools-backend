@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Location;
 use App\Models\Province;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class LocationSchoolSeeder extends Seeder
@@ -47,9 +47,9 @@ class LocationSchoolSeeder extends Seeder
             ];
 
             foreach ($schools as $schoolName) {
-                Location::create([
-                    'country' => 'Cambodia',
-                    'province' => $province->name,
+                School::create([
+                    'country_id' => $province->country_id,
+                    'province_id' => $province->id,
                     'school_name' => $schoolName,
                 ]);
             }

@@ -11,7 +11,7 @@ interface GameHistoryRepositoryInterface
 {
     public function findAllPaginated(int $perPage = 10): LengthAwarePaginator;
 
-    public function findById(int $id): ?GameHistory;
+    public function findById(int|string $id): ?GameHistory;
 
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator;
 

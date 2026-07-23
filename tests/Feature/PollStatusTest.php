@@ -10,13 +10,11 @@ beforeEach(function () {
     $this->student = User::factory()->create(['role' => 'student']);
 });
 
-it('teacher can open a draft poll via PATCH status', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can open a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertOk()
         ->assertJsonPath('poll.status', 'active');
 
@@ -24,74 +22,46 @@ it('teacher can open a draft poll via PATCH status', function () {
     expect($poll->fresh()->started_at)->not->toBeNull();
 });
 
-it('teacher can close an active poll via PATCH status', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can close an active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'closed',
-        ])
+        ->postJson("/api/polls/{$poll->id}/end")
         ->assertOk()
-        ->assertJsonPath('poll.status', 'ended');
+        ->assertJsonPath('poll.status', 'closed');
 
-    expect($poll->fresh()->status)->toBe('ended');
+    expect($poll->fresh()->status)->toBe('closed');
 });
 
 it('student cannot update poll status', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->student)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertForbidden();
 });
 
 it('cannot open an already active poll', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertUnprocessable();
 });
 
 it('cannot close a draft poll without opening it', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'closed',
-        ])
+        ->postJson("/api/polls/{$poll->id}/end")
         ->assertUnprocessable();
 });
 
-it('validates status is required', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
-
-    actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [])
-        ->assertUnprocessable();
-});
-
-it('validates status must be active or closed', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
-
-    actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'invalid',
-        ])
-        ->assertUnprocessable();
-});
-
-it('other teacher cannot update someone elses poll status', function () {
+it('validates ownership on poll status change', function () {
     $otherTeacher = User::factory()->create(['role' => 'teacher']);
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($otherTeacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertForbidden();
 });

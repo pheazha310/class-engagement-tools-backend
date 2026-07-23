@@ -20,12 +20,16 @@ class RoleController extends Controller
             ->map(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'users_count' => $role->users()->count(),
+                'users_count' => \DB::table('model_has_roles')
+                    ->where('role_id', $role->id)
+                    ->where('model_type', \App\Models\User::class)
+                    ->count(),
                 'permissions' => $role->permissions->pluck('name'),
                 'is_protected' => in_array($role->name, ['admin', 'teacher', 'student']),
-            ]);
+            ])
+            ->values();
 
-        return response()->json($roles);
+        return response()->json(['data' => $roles]);
     }
 
     public function store(Request $request): JsonResponse
@@ -63,7 +67,10 @@ class RoleController extends Controller
         return response()->json([
             'id' => $role->id,
             'name' => $role->name,
-            'users_count' => $role->users()->count(),
+            'users_count' => \DB::table('model_has_roles')
+                ->where('role_id', $role->id)
+                ->where('model_type', \App\Models\User::class)
+                ->count(),
             'permissions' => $role->permissions->pluck('name'),
             'is_protected' => in_array($role->name, ['admin', 'teacher', 'student']),
         ]);
@@ -94,7 +101,10 @@ class RoleController extends Controller
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'users_count' => $role->users()->count(),
+                'users_count' => \DB::table('model_has_roles')
+                    ->where('role_id', $role->id)
+                    ->where('model_type', \App\Models\User::class)
+                    ->count(),
                 'permissions' => $role->permissions->pluck('name'),
                 'is_protected' => false,
             ],

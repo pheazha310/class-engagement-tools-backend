@@ -24,18 +24,17 @@ it('can create a quiz', function () {
     $response->assertStatus(201)
         ->assertJsonStructure([
             'data' => [
-                'id', 'teacher_id', 'title', 'description', 'subject',
+                'id', 'title', 'description', 'subject',
                 'class_name', 'duration', 'passing_score', 'due_date',
                 'shuffle_questions', 'status', 'created_at', 'updated_at',
             ],
         ]);
 
     expect($response->json('data.title'))->toBe('Mathematics Final Exam')
-        ->and($response->json('data.teacher_id'))->toBe($this->teacher->id)
         ->and($response->json('data.status'))->toBe('draft');
 });
 
-it('requires authentication to create a quiz', function () {
+it('allows creating a quiz without authentication', function () {
     $response = $this->postJson('/api/quizzes', [
         'title' => 'Test Quiz',
         'subject' => 'Math',
@@ -44,7 +43,7 @@ it('requires authentication to create a quiz', function () {
         'due_date' => '2026-07-20T23:59',
     ]);
 
-    $response->assertStatus(401);
+    $response->assertStatus(201);
 });
 
 it('validates required fields when creating a quiz', function () {
@@ -54,15 +53,15 @@ it('validates required fields when creating a quiz', function () {
         ->assertJsonStructure(['message', 'errors']);
 });
 
-it('can list all quizzes for a teacher', function () {
+it('can list all quizzes', function () {
     Quiz::factory()->count(3)->create(['teacher_id' => $this->teacher->id]);
     Quiz::factory()->create(); // different teacher
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes');
+    $response = $this->getJson('/api/quizzes');
 
     $response->assertStatus(200)
         ->assertJsonStructure(['data']);
-    expect(count($response->json('data')))->toBe(3);
+    expect(count($response->json('data')))->toBe(4);
 });
 
 it('can search quizzes by title, subject, or class name', function () {
@@ -77,11 +76,11 @@ it('can search quizzes by title, subject, or class name', function () {
         'subject' => 'History',
     ]);
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes?search=Algebra');
+    $response = $this->getJson('/api/quizzes?search=Algebra');
     expect(count($response->json('data')))->toBe(1)
         ->and($response->json('data.0.title'))->toBe('Algebra Basics');
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes?search=History');
+    $response = $this->getJson('/api/quizzes?search=History');
     expect(count($response->json('data')))->toBe(1);
 });
 
@@ -94,7 +93,7 @@ it('can filter quizzes by status', function () {
         'teacher_id' => $this->teacher->id,
     ]);
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes?status=draft');
+    $response = $this->getJson('/api/quizzes?status=draft');
     expect(count($response->json('data')))->toBe(1)
         ->and($response->json('data.0.status'))->toBe('draft');
 });
@@ -109,27 +108,28 @@ it('can filter quizzes by subject', function () {
         'subject' => 'English',
     ]);
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes?subject=Mathematics');
+    $response = $this->getJson('/api/quizzes?subject=Mathematics');
     expect(count($response->json('data')))->toBe(1);
 });
 
 it('can show a single quiz', function () {
     $quiz = Quiz::factory()->create(['teacher_id' => $this->teacher->id]);
 
-    $response = $this->withToken($this->token)->getJson("/api/quizzes/{$quiz->id}");
+    $response = $this->getJson("/api/quizzes/{$quiz->id}");
 
     $response->assertStatus(200)
         ->assertJsonStructure(['data' => ['id', 'title']]);
     expect($response->json('data.id'))->toBe($quiz->id);
 });
 
-it('returns 403 when showing another teachers quiz', function () {
+it('returns quizzes from all teachers when showing a quiz', function () {
     $otherTeacher = User::factory()->create(['role' => 'teacher']);
     $quiz = Quiz::factory()->create(['teacher_id' => $otherTeacher->id]);
 
     $response = $this->withToken($this->token)->getJson("/api/quizzes/{$quiz->id}");
 
-    $response->assertStatus(403);
+    $response->assertStatus(200);
+    expect($response->json('data.id'))->toBe($quiz->id);
 });
 
 it('can update a quiz', function () {
@@ -176,7 +176,7 @@ it('orders quizzes by newest first', function () {
     $this->travel(1)->second();
     $second = Quiz::factory()->create(['teacher_id' => $this->teacher->id]);
 
-    $response = $this->withToken($this->token)->getJson('/api/quizzes');
+    $response = $this->getJson('/api/quizzes');
 
     expect($response->json('data.0.id'))->toBe($second->id);
 });

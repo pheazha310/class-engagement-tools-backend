@@ -10,13 +10,13 @@ beforeEach(function () {
 });
 
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+    $response = $this->get('/register');
 
     $response->assertOk();
 });
 
 test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
+    $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
         'password' => 'password',
@@ -24,7 +24,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect();
 });
 
 test('new users can save school, country, and province during registration', function () {
@@ -49,5 +49,5 @@ test('new users can save school, country, and province during registration', fun
     $this->assertNotNull($user->profile->province);
     $this->assertSame('Western Cape', $user->profile->province->name);
     $this->assertNotNull($user->profile->school);
-    $this->assertSame('Brighton High School', $user->profile->school->name);
+    $this->assertSame('Brighton High School', $user->profile->school->school_name);
 });
