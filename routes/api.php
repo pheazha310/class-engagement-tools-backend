@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\QuizRankingController;
 use App\Http\Controllers\Api\QuizReportController;
+use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
@@ -102,8 +103,15 @@ Route::get('polls/public/{token}', [PollController::class, 'showByToken']);
 Route::get('polls/public/{token}/results', [PollController::class, 'publicResults']);
 Route::post('polls/public/{token}/vote', [VoteController::class, 'vote']);
 
-// Poll routes — authenticated (teacher only)
-Route::middleware(['web', 'auth'])->group(function () {
+// Soundboard routes — public (no auth required)
+Route::get('sounds', [SoundController::class, 'index']);
+
+// Soundboard routes — authenticated (teacher)
+Route::post('sounds/{sound}/play', [SoundController::class, 'play'])->middleware(['web', 'auth:sanctum']);
+Route::get('sounds/history', [SoundController::class, 'history'])->middleware(['web', 'auth:sanctum']);
+
+// Authenticated routes (teacher/admin)
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
