@@ -2,6 +2,7 @@
 
 use App\Models\Poll;
 use App\Models\User;
+use App\Models\Vote;
 
 use function Pest\Laravel\actingAs;
 
@@ -10,13 +11,11 @@ beforeEach(function () {
     $this->student = User::factory()->create(['role' => 'student']);
 });
 
-it('teacher can open a draft poll via PATCH status', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can start a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertOk()
         ->assertJsonPath('poll.status', 'active');
 
@@ -24,74 +23,88 @@ it('teacher can open a draft poll via PATCH status', function () {
     expect($poll->fresh()->started_at)->not->toBeNull();
 });
 
-it('teacher can close an active poll via PATCH status', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can close an active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'closed',
-        ])
+        ->postJson("/api/polls/{$poll->id}/end")
         ->assertOk()
-        ->assertJsonPath('poll.status', 'ended');
+        ->assertJsonPath('poll.status', 'closed');
 
-    expect($poll->fresh()->status)->toBe('ended');
+    expect($poll->fresh()->status)->toBe('closed');
 });
 
-it('student cannot update poll status', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('student cannot start a poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->student)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertForbidden();
 });
 
-it('cannot open an already active poll', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('cannot start an already active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertUnprocessable();
 });
 
-it('cannot close a draft poll without opening it', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('cannot close a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'closed',
-        ])
+        ->postJson("/api/polls/{$poll->id}/end")
         ->assertUnprocessable();
 });
 
-it('validates status is required', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('auto-closes expired polls via scheduler', function () {
+    $poll = Poll::factory()->active()->create([
+        'created_by' => $this->teacher->id,
+        'started_at' => now()->subMinutes(15),
+        'duration_minutes' => 10,
+    ]);
 
-    actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [])
-        ->assertUnprocessable();
+    $this->artisan('app:close-expired-polls')->assertSuccessful();
+
+    expect($poll->fresh()->status)->toBe('closed');
+    expect($poll->fresh()->ended_at)->not->toBeNull();
 });
 
-it('validates status must be active or closed', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('does not close polls that have not expired', function () {
+    $poll = Poll::factory()->active()->create([
+        'created_by' => $this->teacher->id,
+        'started_at' => now(),
+        'duration_minutes' => 10,
+    ]);
 
-    actingAs($this->teacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'invalid',
-        ])
-        ->assertUnprocessable();
+    $this->artisan('app:close-expired-polls')->assertSuccessful();
+
+    expect($poll->fresh()->status)->toBe('active');
 });
 
-it('other teacher cannot update someone elses poll status', function () {
-    $otherTeacher = User::factory()->create(['role' => 'teacher']);
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('dashboard stats returns correct counts', function () {
+    Poll::factory()->create(['created_by' => $this->teacher->id]);
+    Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
+    Poll::factory()->closed()->create(['created_by' => $this->teacher->id]);
 
-    actingAs($otherTeacher)
-        ->patchJson("/api/polls/{$poll->id}/status", [
-            'status' => 'active',
-        ])
-        ->assertForbidden();
+    actingAs($this->teacher)
+        ->getJson('/api/polls/dashboard/stats')
+        ->assertOk()
+        ->assertJsonPath('data.total_polls', 3)
+        ->assertJsonPath('data.active_polls', 1)
+        ->assertJsonPath('data.closed_polls', 1);
+});
+
+it('returns dashboard stats for authenticated teacher', function () {
+    Poll::factory()->create(['created_by' => $this->teacher->id]);
+
+    actingAs($this->teacher)
+        ->getJson('/api/polls/stats')
+        ->assertOk()
+        ->assertJsonPath('data.total_polls', 1);
+});
+
+it('unauthorized user cannot access dashboard stats', function () {
+    $this->getJson('/api/polls/stats')->assertUnauthorized();
 });

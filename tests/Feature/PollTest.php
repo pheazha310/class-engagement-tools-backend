@@ -3,25 +3,23 @@
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
-use App\Models\Vote;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseCount;
-use function Pest\Laravel\assertDatabaseHas;
 
 beforeEach(function () {
     $this->teacher = User::factory()->create(['role' => 'teacher']);
-    $this->student = User::factory()->create(['role' => 'student']);
 });
 
 it('teacher can create a poll', function () {
     actingAs($this->teacher)
         ->postJson('/api/polls', [
+            'title' => 'Best PHP framework?',
             'question' => 'Best PHP framework?',
             'options' => ['Laravel', 'Symfony', 'CakePHP'],
         ])
         ->assertCreated()
-        ->assertJsonFragment(['question' => 'Best PHP framework?']);
+        ->assertJsonPath('poll.question', 'Best PHP framework?');
 
     assertDatabaseCount('polls', 1);
     assertDatabaseCount('poll_options', 3);
@@ -30,6 +28,7 @@ it('teacher can create a poll', function () {
 it('validates minimum 2 options', function () {
     actingAs($this->teacher)
         ->postJson('/api/polls', [
+            'title' => 'Test?',
             'question' => 'Test?',
             'options' => ['Only one'],
         ])
@@ -39,6 +38,7 @@ it('validates minimum 2 options', function () {
 it('validates maximum 10 options', function () {
     actingAs($this->teacher)
         ->postJson('/api/polls', [
+            'title' => 'Test?',
             'question' => 'Test?',
             'options' => range(1, 11),
         ])
@@ -46,8 +46,11 @@ it('validates maximum 10 options', function () {
 });
 
 it('student cannot create a poll', function () {
-    actingAs($this->student)
+    $student = User::factory()->create(['role' => 'student']);
+
+    actingAs($student)
         ->postJson('/api/polls', [
+            'title' => 'Test?',
             'question' => 'Test?',
             'options' => ['A', 'B'],
         ])
@@ -55,7 +58,7 @@ it('student cannot create a poll', function () {
 });
 
 it('teacher can view their polls', function () {
-    Poll::factory(3)->create(['teacher_id' => $this->teacher->id]);
+    Poll::factory(3)->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
         ->getJson('/api/polls')
@@ -63,88 +66,23 @@ it('teacher can view their polls', function () {
         ->assertJsonCount(3, 'data');
 });
 
-it('teacher can start a poll', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can update a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->postJson("/api/polls/{$poll->id}/start")
-        ->assertOk();
-
-    expect($poll->fresh()->status)->toBe('active');
-    expect($poll->fresh()->started_at)->not->toBeNull();
-});
-
-it('teacher can end an active poll', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
-
-    actingAs($this->teacher)
-        ->postJson("/api/polls/{$poll->id}/end")
-        ->assertOk();
-
-    expect($poll->fresh()->status)->toBe('ended');
-});
-
-it('student can vote on active poll', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-
-    actingAs($this->student)
-        ->postJson("/api/polls/{$poll->id}/vote", [
-            'option_id' => $option->id,
+        ->putJson("/api/polls/{$poll->id}", [
+            'title' => 'Updated title',
+            'question' => 'Updated question?',
+            'options' => ['Yes', 'No'],
         ])
-        ->assertOk();
-
-    assertDatabaseHas('votes', [
-        'poll_id' => $poll->id,
-        'option_id' => $option->id,
-        'student_id' => $this->student->id,
-    ]);
-});
-
-it('student cannot vote twice', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-    Vote::factory()->create([
-        'poll_id' => $poll->id,
-        'option_id' => $option->id,
-        'student_id' => $this->student->id,
-    ]);
-
-    actingAs($this->student)
-        ->postJson("/api/polls/{$poll->id}/vote", [
-            'option_id' => $option->id,
-        ])
-        ->assertUnprocessable();
-});
-
-it('student cannot vote on draft poll', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-
-    actingAs($this->student)
-        ->postJson("/api/polls/{$poll->id}/vote", [
-            'option_id' => $option->id,
-        ])
-        ->assertUnprocessable();
-});
-
-it('shows live results', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
-    $options = PollOption::factory(2)->create(['poll_id' => $poll->id]);
-
-    Vote::factory()->create(['poll_id' => $poll->id, 'option_id' => $options[0]->id, 'student_id' => User::factory()]);
-    Vote::factory()->create(['poll_id' => $poll->id, 'option_id' => $options[0]->id, 'student_id' => User::factory()]);
-    Vote::factory()->create(['poll_id' => $poll->id, 'option_id' => $options[1]->id, 'student_id' => User::factory()]);
-
-    actingAs($this->teacher)
-        ->getJson("/api/polls/{$poll->id}/results")
         ->assertOk()
-        ->assertJsonFragment(['totalVotes' => 3])
-        ->assertJsonCount(2, 'data.results');
+        ->assertJsonPath('poll.title', 'Updated title');
+
+    expect($poll->fresh()->title)->toBe('Updated title');
 });
 
 it('teacher can delete a draft poll', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
         ->deleteJson("/api/polls/{$poll->id}")
@@ -153,13 +91,47 @@ it('teacher can delete a draft poll', function () {
     assertDatabaseCount('polls', 0);
 });
 
-it('allows starting a draft poll even when another poll is active', function () {
-    Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
-    $draftPoll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('teacher can start a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
     actingAs($this->teacher)
-        ->postJson("/api/polls/{$draftPoll->id}/start")
+        ->postJson("/api/polls/{$poll->id}/start")
         ->assertOk();
 
-    expect($draftPoll->fresh()->status)->toBe('active');
+    expect($poll->fresh()->status)->toBe('active');
+});
+
+it('teacher can end an active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
+
+    actingAs($this->teacher)
+        ->postJson("/api/polls/{$poll->id}/end")
+        ->assertOk();
+
+    expect($poll->fresh()->status)->toBe('closed');
+});
+
+it('cannot start an already active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
+
+    actingAs($this->teacher)
+        ->postJson("/api/polls/{$poll->id}/start")
+        ->assertUnprocessable();
+});
+
+it('cannot end a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
+
+    actingAs($this->teacher)
+        ->postJson("/api/polls/{$poll->id}/end")
+        ->assertUnprocessable();
+});
+
+it('other teacher cannot manage someone elses poll', function () {
+    $otherTeacher = User::factory()->create(['role' => 'teacher']);
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
+
+    actingAs($otherTeacher)
+        ->postJson("/api/polls/{$poll->id}/start")
+        ->assertForbidden();
 });

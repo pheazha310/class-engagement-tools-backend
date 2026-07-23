@@ -45,7 +45,11 @@ class PollRepository implements PollRepositoryInterface
 
     public function findExpired(): iterable
     {
-        return Poll::expired()->get();
+        return Poll::active()
+            ->whereNotNull('started_at')
+            ->whereNotNull('duration_minutes')
+            ->get()
+            ->filter(fn (Poll $poll) => $poll->hasExpired());
     }
 
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator
@@ -84,7 +88,7 @@ class PollRepository implements PollRepositoryInterface
     public function end(Poll $poll): Poll
     {
         return $this->update($poll, [
-            'status' => 'ended',
+            'status' => 'closed',
             'ended_at' => now(),
         ]);
     }

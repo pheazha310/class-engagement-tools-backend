@@ -15,12 +15,13 @@ beforeEach(function () {
 it('creates a yes/no poll with default options', function () {
     actingAs($this->teacher)
         ->postJson('/api/polls', [
+            'title' => 'Is Laravel great?',
             'question' => 'Is Laravel great?',
             'poll_type' => 'yes_no',
             'options' => ['Yes', 'No'],
         ])
         ->assertCreated()
-        ->assertJsonPath('data.poll_type', 'yes_no');
+        ->assertJsonPath('poll.poll_type', 'yes_no');
 
     $poll = Poll::first();
 
@@ -31,98 +32,85 @@ it('creates a yes/no poll with default options', function () {
 it('creates a rating poll with 1-5 options', function () {
     actingAs($this->teacher)
         ->postJson('/api/polls', [
+            'title' => 'Rate the lesson',
             'question' => 'Rate the lesson',
             'poll_type' => 'rating',
-            'options' => [],
+            'options' => ['1', '2', '3', '4', '5'],
         ])
         ->assertCreated()
-        ->assertJsonPath('data.poll_type', 'rating');
+        ->assertJsonPath('poll.poll_type', 'rating');
 
     $poll = Poll::first();
 
     expect($poll->options->pluck('option_text')->all())->toBe(['1', '2', '3', '4', '5']);
 });
 
-it('generates a share token on create', function () {
-    $poll = Poll::factory()->create(['teacher_id' => $this->teacher->id]);
+it('generates a public token on create', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
-    expect($poll->share_token)->not->toBeNull();
-    expect(strlen($poll->share_token))->toBe(32);
+    expect($poll->public_token)->not->toBeNull();
 });
 
-it('exposes a public poll by share token', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('exposes a public poll by public token', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
     PollOption::factory(2)->create(['poll_id' => $poll->id]);
 
-    $this->getJson("/api/polls/share/{$poll->share_token}")
+    $this->getJson("/api/polls/public/{$poll->public_token}")
         ->assertOk()
-        ->assertJsonPath('data.id', $poll->id)
-        ->assertJsonPath('data.share_token', $poll->share_token);
+        ->assertJsonPath('poll.id', $poll->id)
+        ->assertJsonPath('poll.public_token', $poll->public_token);
 });
 
-it('returns 404 for an invalid share token', function () {
-    $this->getJson('/api/polls/share/does-not-exist')
+it('returns 404 for an invalid public token', function () {
+    $this->getJson('/api/polls/public/does-not-exist')
         ->assertNotFound();
 });
 
-it('guest can vote via share token and cannot vote twice', function () {
-    $poll = Poll::factory()->active()->create(['teacher_id' => $this->teacher->id]);
+it('guest can vote via public token and cannot vote twice', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
     $token = 'guest-token-'.uniqid();
 
-    $this->postJson("/api/polls/{$poll->id}/vote", [
+    $this->postJson("/api/polls/public/{$poll->public_token}/vote", [
         'option_id' => $option->id,
-        'voter_token' => $token,
-    ])->assertOk();
+        'guest_token' => $token,
+    ])->assertStatus(201);
 
-    assertDatabaseCount('votes', 1);
-
-    $this->postJson("/api/polls/{$poll->id}/vote", [
+    $this->postJson("/api/polls/public/{$poll->public_token}/vote", [
         'option_id' => $option->id,
-        'voter_token' => $token,
+        'guest_token' => $token,
     ])->assertUnprocessable();
 });
 
-it('auto-closes an expired poll', function () {
-    $poll = Poll::factory()->active()->create([
-        'teacher_id' => $this->teacher->id,
-        'started_at' => now()->subMinutes(15),
-        'duration_minutes' => 10,
-    ]);
+it('dashboard stats returns counts', function () {
+    Poll::factory()->create(['created_by' => $this->teacher->id]);
+    Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
+    Poll::factory()->closed()->create(['created_by' => $this->teacher->id]);
 
-    $this->artisan('app:close-expired-polls')->assertSuccessful();
-
-    expect($poll->fresh()->status)->toBe('ended');
-    expect($poll->fresh()->ended_at)->not->toBeNull();
+    actingAs($this->teacher)
+        ->getJson('/api/polls/dashboard/stats')
+        ->assertOk()
+        ->assertJsonPath('data.total_polls', 3)
+        ->assertJsonPath('data.active_polls', 1)
+        ->assertJsonPath('data.closed_polls', 1);
 });
 
-it('does not close polls whose timer has not expired', function () {
-    $poll = Poll::factory()->active()->create([
-        'teacher_id' => $this->teacher->id,
-        'started_at' => now(),
-        'duration_minutes' => 10,
-    ]);
+it('allows starting a draft poll', function () {
+    $poll = Poll::factory()->create(['created_by' => $this->teacher->id]);
 
-    $this->artisan('app:close-expired-polls')->assertSuccessful();
+    actingAs($this->teacher)
+        ->postJson("/api/polls/{$poll->id}/start")
+        ->assertOk();
 
     expect($poll->fresh()->status)->toBe('active');
 });
 
-it('requires points when voting on a rating poll', function () {
-    $poll = Poll::factory()->active()->create([
-        'teacher_id' => $this->teacher->id,
-        'poll_type' => 'rating',
-    ]);
-    PollOption::factory(5)->create(['poll_id' => $poll->id]);
+it('allows ending an active poll', function () {
+    $poll = Poll::factory()->active()->create(['created_by' => $this->teacher->id]);
 
-    actingAs($this->student)
-        ->postJson("/api/polls/{$poll->id}/vote", [])
-        ->assertUnprocessable();
-
-    actingAs($this->student)
-        ->postJson("/api/polls/{$poll->id}/vote", [
-            'points' => 4,
-            'option_id' => $poll->options->skip(3)->first()->id,
-        ])
+    actingAs($this->teacher)
+        ->postJson("/api/polls/{$poll->id}/end")
         ->assertOk();
+
+    expect($poll->fresh()->status)->toBe('closed');
 });

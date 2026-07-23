@@ -109,6 +109,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
 
     Route::get('polls', [PollController::class, 'index']);
+    Route::get('polls/stats', [PollController::class, 'dashboardStats']);
+    Route::get('polls/dashboard/stats', [PollController::class, 'dashboardStats']);
     Route::post('polls', [PollController::class, 'store']);
     Route::get('polls/{poll}', [PollController::class, 'show']);
     Route::put('polls/{poll}', [PollController::class, 'update']);

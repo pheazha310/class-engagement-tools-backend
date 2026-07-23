@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Poll extends Model
@@ -82,6 +83,24 @@ class Poll extends Model
     public function isClosed(): bool
     {
         return $this->status === 'closed';
+    }
+
+    public function scopeExpired($query)
+    {
+        return $query
+            ->where('status', 'active')
+            ->whereNotNull('started_at')
+            ->whereNotNull('duration_minutes')
+            ->whereRaw('started_at <= NOW() - (duration_minutes * INTERVAL \'1 minute\')');
+    }
+
+    public function hasExpired(): bool
+    {
+        if (! $this->isActive() || ! $this->started_at || ! $this->duration_minutes) {
+            return false;
+        }
+
+        return $this->started_at->copy()->addMinutes($this->duration_minutes)->isPast();
     }
 
     public function scopeByCreator($query, string $userId)

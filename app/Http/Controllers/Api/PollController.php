@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StorePollRequest;
-use App\Http\Requests\UpdatePollRequest;
 use App\Http\Resources\PollResource;
-use App\Http\Resources\PollResultResource;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Models\Vote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,23 +23,40 @@ class PollController extends Controller
         return PollResource::collection($polls);
     }
 
-    public function store(StorePollRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $data = $request->validated();
+        $user = $request->user();
+
+        if (! $user || ! $user->isTeacher()) {
+            return response()->json(['message' => 'Only teachers can create polls.'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'question' => ['required', 'string', 'max:1000'],
+            'poll_type' => ['nullable', 'string', 'in:multiple_choice,single_choice,yes_no,true_false,rating,open_text'],
+            'options' => ['required', 'array', 'min:2', 'max:20'],
+            'options.*' => ['required', 'string', 'max:255'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'allow_multiple_votes' => ['boolean'],
+            'anonymous' => ['boolean'],
+            'show_results' => ['boolean'],
+        ]);
 
         $poll = Poll::create([
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'question' => $data['question'],
-            'poll_type' => $data['poll_type'],
-            'duration_minutes' => $data['duration_minutes'] ?? null,
-            'allow_multiple_votes' => $data['allow_multiple_votes'] ?? false,
-            'anonymous' => $data['anonymous'] ?? true,
-            'show_results' => $data['show_results'] ?? true,
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'question' => $validated['question'],
+            'poll_type' => $validated['poll_type'] ?? 'multiple_choice',
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'allow_multiple_votes' => $validated['allow_multiple_votes'] ?? false,
+            'anonymous' => $validated['anonymous'] ?? true,
+            'show_results' => $validated['show_results'] ?? true,
             'created_by' => $request->user()->id,
         ]);
 
-        foreach ($data['options'] as $order => $optionText) {
+        foreach ($validated['options'] as $order => $optionText) {
             PollOption::create([
                 'poll_id' => $poll->id,
                 'option_text' => $optionText,
@@ -70,24 +85,35 @@ class PollController extends Controller
         ]);
     }
 
-    public function update(UpdatePollRequest $request, Poll $poll): JsonResponse
+    public function update(Request $request, Poll $poll): JsonResponse
     {
-        $data = $request->validated();
-
-        $poll->update([
-            'title' => $data['title'] ?? $poll->title,
-            'description' => array_key_exists('description', $data) ? $data['description'] : $poll->description,
-            'question' => $data['question'] ?? $poll->question,
-            'poll_type' => $data['poll_type'] ?? $poll->poll_type,
-            'duration_minutes' => array_key_exists('duration_minutes', $data) ? $data['duration_minutes'] : $poll->duration_minutes,
-            'allow_multiple_votes' => $data['allow_multiple_votes'] ?? $poll->allow_multiple_votes,
-            'anonymous' => $data['anonymous'] ?? $poll->anonymous,
-            'show_results' => $data['show_results'] ?? $poll->show_results,
+        $validated = $request->validate([
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'question' => ['sometimes', 'required', 'string', 'max:1000'],
+            'poll_type' => ['nullable', 'string', 'in:multiple_choice,single_choice,yes_no,true_false,rating,open_text'],
+            'options' => ['sometimes', 'array', 'min:2', 'max:20'],
+            'options.*' => ['required', 'string', 'max:255'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'allow_multiple_votes' => ['boolean'],
+            'anonymous' => ['boolean'],
+            'show_results' => ['boolean'],
         ]);
 
-        if (isset($data['options'])) {
+        $poll->update([
+            'title' => $validated['title'] ?? $poll->title,
+            'description' => array_key_exists('description', $validated) ? $validated['description'] : $poll->description,
+            'question' => $validated['question'] ?? $poll->question,
+            'poll_type' => $validated['poll_type'] ?? $poll->poll_type,
+            'duration_minutes' => array_key_exists('duration_minutes', $validated) ? $validated['duration_minutes'] : $poll->duration_minutes,
+            'allow_multiple_votes' => $validated['allow_multiple_votes'] ?? $poll->allow_multiple_votes,
+            'anonymous' => $validated['anonymous'] ?? $poll->anonymous,
+            'show_results' => $validated['show_results'] ?? $poll->show_results,
+        ]);
+
+        if (isset($validated['options'])) {
             $poll->options()->delete();
-            foreach ($data['options'] as $order => $optionText) {
+            foreach ($validated['options'] as $order => $optionText) {
                 PollOption::create([
                     'poll_id' => $poll->id,
                     'option_text' => $optionText,
@@ -175,6 +201,29 @@ class PollController extends Controller
 
         return response()->json([
             'polls' => $polls,
+        ]);
+    }
+
+    public function dashboardStats(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $totalPolls = Poll::byCreator($user->id)->count();
+        $activePolls = Poll::byCreator($user->id)->active()->count();
+        $closedPolls = Poll::byCreator($user->id)->closed()->count();
+        $totalVotes = Vote::whereIn('poll_id', Poll::byCreator($user->id)->pluck('id'))->count();
+
+        return response()->json([
+            'data' => [
+                'total_polls' => $totalPolls,
+                'active_polls' => $activePolls,
+                'closed_polls' => $closedPolls,
+                'total_votes' => $totalVotes,
+            ],
         ]);
     }
 

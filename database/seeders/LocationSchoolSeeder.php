@@ -2,15 +2,23 @@
 
 namespace Database\Seeders;
 
-use App\Models\Location;
+use App\Models\Country;
 use App\Models\Province;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class LocationSchoolSeeder extends Seeder
 {
     public function run(): void
     {
-        $provinces = Province::all();
+        $country = Country::where('code', 'KH')->first();
+
+        if (! $country) {
+            $country = Country::firstOrCreate(
+                ['code' => 'KH'],
+                ['name' => 'Cambodia'],
+            );
+        }
 
         $sampleSchools = [
             'Banteay Meanchey' => ['Phnom Svay High School', 'Serei Saophoan Secondary School'],
@@ -35,22 +43,22 @@ class LocationSchoolSeeder extends Seeder
             'Svay Rieng' => ['Svay Rieng High School', 'Chantrea Secondary School'],
             'Takeo' => ['Takeo High School', 'Doun Kaev Secondary School'],
             'Oddar Meanchey' => ['Oddar Meanchey High School', 'Anlong Veng Secondary School'],
-            'Kep' => ['Kep High School', 'Damnak Chang\'aeur Secondary School'],
+            'Kep' => ['Kep High School', "Damnak Chang'aeur Secondary School"],
             'Pailin' => ['Pailin High School', 'Sala Krau Secondary School'],
             'Tboung Khmum' => ['Tboung Khmum High School', 'Ponhea Kraek Secondary School'],
         ];
 
-        foreach ($provinces as $province) {
-            $schools = $sampleSchools[$province->name] ?? [
-                $province->name.' High School',
-                $province->name.' Secondary School',
-            ];
+        foreach ($sampleSchools as $provinceName => $schools) {
+            $province = Province::firstOrCreate(
+                ['name' => $provinceName],
+                ['country_id' => $country->id],
+            );
 
             foreach ($schools as $schoolName) {
-                Location::create([
-                    'country' => 'Cambodia',
-                    'province' => $province->name,
+                School::firstOrCreate([
                     'school_name' => $schoolName,
+                    'country_id' => $country->id,
+                    'province_id' => $province->id,
                 ]);
             }
         }
