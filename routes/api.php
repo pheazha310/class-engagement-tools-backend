@@ -19,6 +19,9 @@ use App\Http\Controllers\Api\QuizReportController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
+use App\Http\Controllers\Api\Teacher\ActivityHistoryController;
+use App\Http\Controllers\Api\Teacher\ClassConfigurationController as TeacherClassConfigurationController;
+use App\Http\Controllers\Api\Teacher\DashboardController;
 use App\Http\Controllers\Api\VoteController;
 use App\Http\Controllers\Api\WheelController;
 use Illuminate\Http\Request;
@@ -87,29 +90,35 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
     Route::patch('polls/{poll}/status', [PollController::class, 'status']);
 
-    Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::get('users', [AdminUserController::class, 'index']);
-        Route::post('users', [AdminUserController::class, 'store']);
-        Route::get('users/{user}', [AdminUserController::class, 'show']);
-        Route::put('users/{user}', [AdminUserController::class, 'update']);
-        Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
-        Route::get('dashboard', [AdminDashboardController::class, 'index']);
+Route::middleware('role:admin')->prefix('admin')->group(function () {
+            Route::get('users', [AdminUserController::class, 'index']);
+            Route::post('users', [AdminUserController::class, 'store']);
+            Route::get('users/{user}', [AdminUserController::class, 'show']);
+            Route::put('users/{user}', [AdminUserController::class, 'update']);
+            Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
+            Route::get('dashboard', [AdminDashboardController::class, 'index']);
 
-        Route::get('schools', [AdminSchoolController::class, 'index']);
-        Route::post('schools', [AdminSchoolController::class, 'store']);
-        Route::get('schools/{school}', [AdminSchoolController::class, 'show']);
-        Route::put('schools/{school}', [AdminSchoolController::class, 'update']);
-        Route::delete('schools/{school}', [AdminSchoolController::class, 'destroy']);
-        Route::get('schools/lookup/data', [AdminSchoolController::class, 'lookupData']);
+            Route::get('schools', [AdminSchoolController::class, 'index']);
+            Route::post('schools', [AdminSchoolController::class, 'store']);
+            Route::get('schools/{school}', [AdminSchoolController::class, 'show']);
+            Route::put('schools/{school}', [AdminSchoolController::class, 'update']);
+            Route::delete('schools/{school}', [AdminSchoolController::class, 'destroy']);
+            Route::get('schools/lookup/data', [AdminSchoolController::class, 'lookupData']);
 
-        Route::get('roles', [AdminRoleController::class, 'index']);
-        Route::post('roles', [AdminRoleController::class, 'store']);
-        Route::get('roles/{role}', [AdminRoleController::class, 'show']);
-        Route::put('roles/{role}', [AdminRoleController::class, 'update']);
-        Route::delete('roles/{role}', [AdminRoleController::class, 'destroy']);
-        Route::get('roles/permissions/all', [AdminRoleController::class, 'permissions']);
+            Route::get('roles', [AdminRoleController::class, 'index']);
+            Route::post('roles', [AdminRoleController::class, 'store']);
+            Route::get('roles/{role}', [AdminRoleController::class, 'show']);
+            Route::put('roles/{role}', [AdminRoleController::class, 'update']);
+            Route::delete('roles/{role}', [AdminRoleController::class, 'destroy']);
+            Route::get('roles/permissions/all', [AdminRoleController::class, 'permissions']);
+        });
+
+        Route::prefix('teacher')->group(function () {
+            Route::apiResource('class-configurations', TeacherClassConfigurationController::class);
+            Route::apiResource('activity-history', ActivityHistoryController::class);
+            Route::get('dashboard', [DashboardController::class, 'index']);
+        });
     });
-});
 
 Route::post('/login', function (Request $request) {
     $request->validate([
