@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\QuizRankingController;
 use App\Http\Controllers\Api\QuizReportController;
+use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
@@ -102,7 +103,14 @@ Route::get('polls/public/{token}', [PollController::class, 'showByToken']);
 Route::get('polls/public/{token}/results', [PollController::class, 'publicResults']);
 Route::post('polls/public/{token}/vote', [VoteController::class, 'vote']);
 
-// Poll routes — authenticated (teacher only)
+// Soundboard routes — public (no auth required)
+Route::get('sounds', [SoundController::class, 'index']);
+
+// Soundboard routes — authenticated (teacher)
+Route::post('sounds/{sound}/play', [SoundController::class, 'play'])->middleware(['web', 'auth:sanctum']);
+Route::get('sounds/history', [SoundController::class, 'history'])->middleware(['web', 'auth:sanctum']);
+
+// Authenticated routes (teacher/admin)
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
@@ -115,33 +123,9 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::delete('polls/{poll}', [PollController::class, 'destroy']);
     Route::post('polls/{poll}/start', [PollController::class, 'start']);
     Route::post('polls/{poll}/end', [PollController::class, 'end']);
-
-    Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::get('users', [AdminUserController::class, 'index']);
-        Route::post('users', [AdminUserController::class, 'store']);
-        Route::get('users/{user}', [AdminUserController::class, 'show']);
-        Route::put('users/{user}', [AdminUserController::class, 'update']);
-        Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
-        Route::get('dashboard', [AdminDashboardController::class, 'index']);
-
-        Route::get('schools', [AdminSchoolController::class, 'index']);
-        Route::post('schools', [AdminSchoolController::class, 'store']);
-        Route::get('schools/{school}', [AdminSchoolController::class, 'show']);
-        Route::put('schools/{school}', [AdminSchoolController::class, 'update']);
-        Route::delete('schools/{school}', [AdminSchoolController::class, 'destroy']);
-        Route::get('schools/lookup/data', [AdminSchoolController::class, 'lookupData']);
-
-        Route::get('roles', [AdminRoleController::class, 'index']);
-        Route::post('roles', [AdminRoleController::class, 'store']);
-        Route::get('roles/{role}', [AdminRoleController::class, 'show']);
-        Route::put('roles/{role}', [AdminRoleController::class, 'update']);
-        Route::delete('roles/{role}', [AdminRoleController::class, 'destroy']);
-        Route::get('roles/permissions/all', [AdminRoleController::class, 'permissions']);
-    });
 });
 
-Route::get('/wheels/shared/{shareToken}', [WheelController::class, 'showShared'])->name('wheels.shared');
-
+// Wheel routes — authenticated
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('/wheels', [WheelController::class, 'index']);
     Route::post('/wheels', [WheelController::class, 'store']);
@@ -153,5 +137,7 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::delete('/wheels/{wheel}/participants/{participant}', [WheelController::class, 'destroyParticipant']);
     Route::post('/wheels/{wheel}/share-token', [WheelController::class, 'generateShareToken']);
 });
+
+Route::get('/wheels/shared/{shareToken}', [WheelController::class, 'showShared'])->name('wheels.shared');
 
 Route::post('/wheel/spin', [WheelController::class, 'spin']);

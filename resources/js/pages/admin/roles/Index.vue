@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import { del, get } from '@/services/api'
 
 interface Role {
@@ -17,7 +18,12 @@ const loading = ref(true)
 
 onMounted(async () => {
     const res = await get<Role[]>('/api/admin/roles')
-    if (res.data) roles.value = res.data
+    if (res.data) {
+        roles.value = res.data
+    } else if (res.error) {
+        console.error('[Roles] API error:', res.error)
+        toast.error(res.error.message || 'Failed to load roles')
+    }
     loading.value = false
 })
 
@@ -25,9 +31,10 @@ async function deleteRole(role: Role) {
     if (!confirm(`Delete the "${role.name}" role?`)) return
     const res = await del(`/api/admin/roles/${role.id}`)
     if (!res.error) {
+        toast.success(`Role "${role.name}" has been deleted`)
         roles.value = roles.value.filter((r) => r.id !== role.id)
     } else {
-        alert(res.error?.message || 'An error occurred')
+        toast.error(res.error?.message || 'Failed to delete role')
     }
 }
 </script>
