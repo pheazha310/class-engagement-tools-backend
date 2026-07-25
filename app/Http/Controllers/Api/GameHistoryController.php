@@ -25,8 +25,8 @@ class GameHistoryController extends Controller
 
         $perPage = (int) request()->query('per_page', 10);
 
-        if ($user) {
-            $histories = $this->gameHistoryRepository->findByTeacher($user->id, $perPage);
+        if ($user && $user->role === 'teacher') {
+            $histories = $this->gameHistoryRepository->findByTeacher((int) $user->id, $perPage);
         } else {
             $histories = $this->gameHistoryRepository->findAllPaginated($perPage);
         }
@@ -54,7 +54,7 @@ class GameHistoryController extends Controller
 
         $user = Auth::user();
 
-        if ($user && $history->teacher_id !== $user->id) {
+        if ($user && (int) $history->teacher_id !== (int) $user->id) {
             return response()->json([
                 'message' => 'Unauthorized.',
             ], Response::HTTP_FORBIDDEN);
@@ -77,7 +77,7 @@ class GameHistoryController extends Controller
 
         $user = Auth::user();
 
-        if (! $user || $history->teacher_id !== $user->id) {
+        if (! $user || (int) $history->teacher_id !== (int) $user->id) {
             return response()->json([
                 'message' => 'Unauthorized.',
             ], Response::HTTP_FORBIDDEN);

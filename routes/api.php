@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
+use App\Http\Controllers\Api\TeacherDashboardController;
 use App\Http\Controllers\Api\VoteController;
 use App\Http\Controllers\Api\WheelController;
 use Illuminate\Support\Facades\Route;
@@ -46,10 +47,10 @@ Route::get('game-sessions/join/{joinCode}', [GameSessionController::class, 'show
 Route::post('game-sessions/{gameSession}/validate-answer', [GameSessionController::class, 'validateAnswer'])->name('game-sessions.validate-answer');
 Route::get('game-sessions/{gameSession}/leaderboard', [GameSessionController::class, 'leaderboard'])->name('game-sessions.leaderboard');
 Route::post('game-sessions/{gameSession}/end', [GameSessionController::class, 'end'])->name('game-sessions.end');
-Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware('auth:sanctum');
-Route::get('game-histories', [GameHistoryController::class, 'index'])->middleware('auth:sanctum');
-Route::get('game-histories/{id}', [GameHistoryController::class, 'show'])->middleware('auth:sanctum');
-Route::get('game-histories/{id}/export/{format}', [GameHistoryController::class, 'export'])->middleware('auth:sanctum');
+Route::get('game-sessions', [GameSessionController::class, 'index'])->middleware(['web', 'auth:sanctum']);
+Route::get('game-histories', [GameHistoryController::class, 'index'])->middleware(['web', 'auth:sanctum']);
+Route::get('game-histories/{id}', [GameHistoryController::class, 'show'])->middleware(['web', 'auth:sanctum']);
+Route::get('game-histories/{id}/export/{format}', [GameHistoryController::class, 'export'])->middleware(['web', 'auth:sanctum']);
 
 // Quiz routes — public (no auth required)
 Route::get('quizzes', [QuizController::class, 'index']);
@@ -115,6 +116,15 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
     Route::post('profile/image', [ProfileController::class, 'uploadImage']);
+
+    Route::get('teacher/dashboard-stats', [TeacherDashboardController::class, 'dashboardStats']);
+    Route::get('teacher/recent-activities', [TeacherDashboardController::class, 'recentActivities']);
+    Route::get('teacher/top-quizzes', [TeacherDashboardController::class, 'topQuizzes']);
+    Route::get('teacher/class-configurations', [TeacherDashboardController::class, 'classConfigurations']);
+    Route::post('teacher/class-configurations', [TeacherDashboardController::class, 'storeClassConfiguration']);
+    Route::put('teacher/class-configurations/{id}', [TeacherDashboardController::class, 'updateClassConfiguration']);
+    Route::delete('teacher/class-configurations/{id}', [TeacherDashboardController::class, 'destroyClassConfiguration']);
+    Route::get('teacher/students', [TeacherDashboardController::class, 'students']);
 
     Route::get('polls', [PollController::class, 'index']);
     Route::post('polls', [PollController::class, 'store']);
