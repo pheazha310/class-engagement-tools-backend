@@ -36,14 +36,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'reset-password',
         ]);
 
+        $middleware->web(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-        ]);
-
-        $middleware->api(prepend: [
-            EnsureFrontendRequestsAreStateful::class,
         ]);
         $middleware->alias([
             'role' => RoleMiddleware::class,
