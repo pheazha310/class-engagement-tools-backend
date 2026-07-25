@@ -21,7 +21,6 @@ class RegistrationRequest extends FormRequest
             'role' => ['nullable', 'string', 'in:teacher,student'],
             'country_id' => ['nullable', 'exists:countries,id'],
             'province_id' => ['nullable', 'exists:provinces,id'],
-            'school_id' => ['nullable', 'exists:schools,id'],
             'country_name' => ['nullable', 'string', 'max:255'],
             'province_name' => ['nullable', 'string', 'max:255'],
             'school_name' => ['nullable', 'string', 'max:255'],

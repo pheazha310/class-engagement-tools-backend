@@ -1,9 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Api\Admin\RoleController as AdminRoleController;
-use App\Http\Controllers\Api\Admin\SchoolController as AdminSchoolController;
-use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Classroom\ClassroomQuizController;
 use App\Http\Controllers\Api\Classroom\ClassroomRankingController;
@@ -21,10 +17,10 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\QuizQuestionController;
 use App\Http\Controllers\Api\QuizRankingController;
 use App\Http\Controllers\Api\QuizReportController;
-use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\SchoolRequestController;
+use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\TeacherDashboardController;
 use App\Http\Controllers\Api\VoteController;
 use App\Http\Controllers\Api\WheelController;

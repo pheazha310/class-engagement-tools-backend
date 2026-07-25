@@ -2,14 +2,20 @@
 
 namespace Database\Seeders;
 
-use App\Models\Location;
+use App\Models\Country;
 use App\Models\Province;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class LocationSchoolSeeder extends Seeder
 {
     public function run(): void
     {
+        $country = Country::firstOrCreate(
+            ['code' => 'KH'],
+            ['name' => 'Cambodia'],
+        );
+
         $provinces = Province::all();
 
         $sampleSchools = [
@@ -47,11 +53,16 @@ class LocationSchoolSeeder extends Seeder
             ];
 
             foreach ($schools as $schoolName) {
-                Location::create([
-                    'country' => 'Cambodia',
-                    'province' => $province->name,
+                $data = [
                     'school_name' => $schoolName,
-                ]);
+                    'country_id' => $country->id,
+                    'province_id' => $province->id,
+                ];
+
+                School::firstOrCreate(
+                    ['school_name' => $schoolName],
+                    $data,
+                );
             }
         }
     }
