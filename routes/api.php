@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\QuizRankingController;
 use App\Http\Controllers\Api\QuizReportController;
 use App\Http\Controllers\Api\QuizSubmitController;
 use App\Http\Controllers\Api\RegistrationController;
+use App\Http\Controllers\Api\SchoolRequestController;
 use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\TeacherDashboardController;
 use App\Http\Controllers\Api\VoteController;
