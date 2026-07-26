@@ -20,8 +20,6 @@ class RegistrationController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        $user->loadMissing(['profile.school']);
-
         return response()->json([
             'message' => 'Registration successful.',
             'user' => [
@@ -33,7 +31,7 @@ class RegistrationController extends Controller
                 'profile_image_url' => $user->profile_image
                     ? asset('storage/'.$user->profile_image)
                     : null,
-                'school' => $user->profile?->school?->school_name ?? null,
+                'school' => null,
             ],
         ], 201);
     }
