@@ -4,7 +4,6 @@ import {
   LayoutGrid,
   Users,
   ShieldCheck,
-  Building2,
   BookOpen,
   BarChart3,
   Activity,
@@ -45,7 +44,6 @@ const menuSections: { label: string; items: SidebarItem[] }[] = [
     items: [
       { label: "Users", icon: Users, route: "/admin/dashboard/users" },
       { label: "Roles", icon: ShieldCheck, route: "/admin/dashboard/roles" },
-      { label: "Schools", icon: Building2, route: "/admin/dashboard/schools" },
     ],
   },
   {

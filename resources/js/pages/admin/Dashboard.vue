@@ -15,6 +15,20 @@ export interface DashboardServerProps {
     recentActivities?: RecentActivity[]
     notifications?: Notification[]
     currentUser?: CurrentUser
+    serverUsers?: {
+        data: any[]
+        current_page: number
+        last_page: number
+        from: number | null
+        to: number | null
+        total: number
+        links: any[]
+    }
+    serverStats?: {
+        stats: StatCard[]
+        currentUser: CurrentUser
+    }
+    serverRoles?: any[]
 }
 
 const props = defineProps<DashboardServerProps>()
@@ -36,6 +50,25 @@ if (props.stats && props.stats.length > 0) {
         notifications: props.notifications ?? store.notifications,
         currentUser: props.currentUser ?? store.currentUser,
     })
+}
+
+// Store server-passed users data in the store for the Users page to use
+if (props.serverUsers) {
+    store.setServerUsers(props.serverUsers)
+}
+
+// Store server-passed dashboard stats (avoids API call)
+if (props.serverStats) {
+    store.applyApiData({
+        stats: props.serverStats.stats,
+        currentUser: props.serverStats.currentUser,
+    })
+    store.hydratedFromServer = true
+}
+
+// Store server-passed roles data for the Roles page to use
+if (props.serverRoles) {
+    store.setServerRoles(props.serverRoles)
 }
 
 onMounted(() => {

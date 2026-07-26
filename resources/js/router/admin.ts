@@ -46,12 +46,6 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/roles/Edit.vue'),
                 props: true,
             },
-            // Schools
-            {
-                path: 'schools',
-                name: 'admin.schools',
-                component: () => import('@/pages/admin/schools/Index.vue'),
-            },
             // Classes
             {
                 path: 'classes',

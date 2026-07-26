@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { del, get } from '@/services/api'
+import { useAdminDashboardStore } from '@/stores/useAdminDashboardStore'
 
 interface Role {
     id: number
@@ -13,19 +14,42 @@ interface Role {
 }
 
 const router = useRouter()
+const store = useAdminDashboardStore()
 const roles = ref<Role[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
+    if (store.hasLoadedRoles) {
+        await fetchRoles()
+        return
+    }
+    const cached = store.consumeServerRoles()
+    if (cached) {
+        roles.value = cached as Role[]
+        store.updateCachedRoles(cached)
+        loading.value = false
+        return
+    }
+    await fetchRoles()
+})
+
+async function fetchRoles() {
+    loading.value = true
     const res = await get<Role[]>('/api/admin/roles')
     if (res.data) {
         roles.value = res.data
+        store.updateCachedRoles(res.data)
     } else if (res.error) {
         console.error('[Roles] API error:', res.error)
-        toast.error(res.error.message || 'Failed to load roles')
+        const cached = store.consumeServerRoles()
+        if (cached) {
+            roles.value = cached as Role[]
+        } else {
+            toast.error(res.error.message || 'Failed to load roles')
+        }
     }
     loading.value = false
-})
+}
 
 async function deleteRole(role: Role) {
     if (!confirm(`Delete the "${role.name}" role?`)) return

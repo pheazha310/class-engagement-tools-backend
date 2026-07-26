@@ -10,125 +10,136 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    private const string GUARD = 'web';
-
+    /**
+     * List all roles with user counts.
+     */
     public function index(): JsonResponse
     {
-        $roles = Role::with('permissions:id,name')
-            ->orderBy('name')
+        $roles = Role::withCount('users')
             ->get()
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'users_count' => $role->users()->count(),
-                'permissions' => $role->permissions->pluck('name'),
-                'is_protected' => in_array($role->name, ['admin', 'teacher', 'student']),
-            ]);
+            ->map(function ($role) {
+                return [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'users_count' => $role->users_count,
+                    'permissions' => $role->permissions->pluck('name'),
+                    'is_protected' => in_array($role->name, ['admin', 'super-admin']),
+                    'created_at' => $role->created_at?->toISOString(),
+                ];
+            });
 
-        return response()->json($roles);
+        return response()->json(['data' => $roles]);
     }
 
+    /**
+     * Show a single role with its permissions.
+     */
+    public function show(string $id): JsonResponse
+    {
+        $role = Role::withCount('users')->with('permissions')->findOrFail($id);
+
+        return response()->json([
+            'data' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'users_count' => $role->users_count,
+                'permissions' => $role->permissions->pluck('name'),
+                'is_protected' => in_array($role->name, ['admin', 'super-admin']),
+                'created_at' => $role->created_at?->toISOString(),
+            ],
+        ]);
+    }
+
+    /**
+     * Create a new role.
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name,guard_name,'.self::GUARD],
+            'permissions' => ['array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        $role = Role::create(['name' => $validated['name'], 'guard_name' => self::GUARD]);
+        $role = Role::create(['name' => $validated['name']]);
 
         if (! empty($validated['permissions'])) {
-            $this->syncPermissions($role, $validated['permissions']);
+            $role->syncPermissions($validated['permissions']);
         }
 
-        $role->load('permissions:id,name');
-
         return response()->json([
-            'message' => 'Role created.',
-            'role' => [
+            'message' => 'Role created successfully.',
+            'data' => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'users_count' => 0,
                 'permissions' => $role->permissions->pluck('name'),
+                'users_count' => 0,
                 'is_protected' => false,
             ],
         ], 201);
     }
 
-    public function show(Role $role): JsonResponse
+    /**
+     * Update an existing role.
+     */
+    public function update(Request $request, string $id): JsonResponse
     {
-        $role->load('permissions:id,name');
+        $role = Role::findOrFail($id);
 
-        return response()->json([
-            'id' => $role->id,
-            'name' => $role->name,
-            'users_count' => $role->users()->count(),
-            'permissions' => $role->permissions->pluck('name'),
-            'is_protected' => in_array($role->name, ['admin', 'teacher', 'student']),
-        ]);
-    }
-
-    public function update(Request $request, Role $role): JsonResponse
-    {
-        if (in_array($role->name, ['admin', 'teacher', 'student'])) {
-            return response()->json([
-                'message' => 'Built-in roles cannot be modified.',
-            ], 403);
+        if (in_array($role->name, ['admin', 'super-admin'])) {
+            return response()->json(['message' => 'Protected roles cannot be modified.'], 422);
         }
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name,'.$role->id],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name,guard_name,'.self::GUARD],
+            'name' => ['sometimes', 'string', 'max:255', 'unique:roles,name,' . $id],
+            'permissions' => ['array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        $role->update(['name' => $validated['name']]);
+        if (isset($validated['name'])) {
+            $role->name = $validated['name'];
+            $role->save();
+        }
 
-        $this->syncPermissions($role, $validated['permissions'] ?? []);
+        if (isset($validated['permissions'])) {
+            $role->syncPermissions($validated['permissions']);
+        }
 
-        $role->load('permissions:id,name');
+        $role->load('permissions');
 
         return response()->json([
-            'message' => 'Role updated.',
-            'role' => [
+            'message' => 'Role updated successfully.',
+            'data' => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'users_count' => $role->users()->count(),
                 'permissions' => $role->permissions->pluck('name'),
-                'is_protected' => false,
             ],
         ]);
     }
 
-    public function destroy(Role $role): JsonResponse
+    /**
+     * Delete a role.
+     */
+    public function destroy(string $id): JsonResponse
     {
-        if (in_array($role->name, ['admin', 'teacher', 'student'])) {
-            return response()->json([
-                'message' => 'Built-in roles cannot be deleted.',
-            ], 403);
+        $role = Role::findOrFail($id);
+
+        if (in_array($role->name, ['admin', 'super-admin'])) {
+            return response()->json(['message' => 'Protected roles cannot be deleted.'], 422);
         }
 
         $role->delete();
 
-        return response()->json([
-            'message' => 'Role deleted.',
-        ]);
+        return response()->json(['message' => 'Role deleted successfully.']);
     }
 
+    /**
+     * List all available permissions.
+     */
     public function permissions(): JsonResponse
     {
-        return response()->json(
-            Permission::where('guard_name', self::GUARD)->orderBy('name')->pluck('name')
-        );
-    }
+        $permissions = Permission::all()->pluck('name');
 
-    private function syncPermissions(Role $role, array $permissionNames): void
-    {
-        $permissions = Permission::whereIn('name', $permissionNames)
-            ->where('guard_name', self::GUARD)
-            ->get();
-
-        $role->syncPermissions($permissions);
+        return response()->json(['data' => $permissions]);
     }
 }

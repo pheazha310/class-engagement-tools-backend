@@ -286,6 +286,58 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         error.value = null
     }
 
+    // ---- Cached users data (persists across navigations) ----
+    const serverUsers = ref<{
+        data: any[]
+        current_page: number
+        last_page: number
+        from: number | null
+        to: number | null
+        total: number
+        links: any[]
+    } | null>(null)
+
+    const hasLoadedUsers = ref(false)
+
+    function setServerUsers(users: typeof serverUsers.value): void {
+        serverUsers.value = users
+    }
+
+    function consumeServerUsers(): typeof serverUsers.value {
+        return serverUsers.value
+    }
+
+    function updateCachedUsers(users: typeof serverUsers.value): void {
+        serverUsers.value = users
+        hasLoadedUsers.value = true
+    }
+
+    function clearCachedUsers(): void {
+        serverUsers.value = null
+    }
+
+    // ---- Cached roles data (persists across navigations) ----
+    const serverRoles = ref<any[] | null>(null)
+
+    const hasLoadedRoles = ref(false)
+
+    function setServerRoles(roles: any[]): void {
+        serverRoles.value = roles
+    }
+
+    function consumeServerRoles(): any[] | null {
+        return serverRoles.value
+    }
+
+    function updateCachedRoles(roles: any[]): void {
+        serverRoles.value = roles
+        hasLoadedRoles.value = true
+    }
+
+    function clearCachedRoles(): void {
+        serverRoles.value = null
+    }
+
     /**
      * Force reload dashboard data from the server.
      */
@@ -306,6 +358,10 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         isLoading,
         error,
         hydratedFromServer,
+        serverUsers,
+        serverRoles,
+        hasLoadedUsers,
+        hasLoadedRoles,
         // Actions
         fetchDashboardData,
         applyApiData,
@@ -313,5 +369,13 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         updateStats,
         clearError,
         refresh,
+        setServerUsers,
+        consumeServerUsers,
+        updateCachedUsers,
+        clearCachedUsers,
+        setServerRoles,
+        consumeServerRoles,
+        updateCachedRoles,
+        clearCachedRoles,
     }
 })

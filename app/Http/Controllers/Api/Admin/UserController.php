@@ -3,184 +3,186 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUserRequest;
-use App\Http\Requests\Admin\UpdateUserRequest;
-use App\Models\Country;
-use App\Models\Province;
-use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    /**
+     * List all users with optional search and pagination.
+     */
     public function index(Request $request): JsonResponse
     {
-        $search = $request->string('search')->trim()->value();
+        $query = User::query()
+            ->with('roles')
+            ->withCount(['polls', 'votes']);
 
-        $users = User::query()
-            ->with(['roles:id,name', 'profile.country', 'profile.province', 'profile.school'])
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(fn (User $user): array => $this->formatUser($user));
+        // Search by name or email
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('email', 'ilike', "%{$search}%");
+            });
+        }
+
+        // Filter by role
+        if ($role = $request->get('role')) {
+            $query->where('role', $role);
+        }
+
+        // Sort
+        $sortField = $request->get('sort', 'created_at');
+        $sortDir = $request->get('direction', 'desc');
+        $query->orderBy($sortField, $sortDir);
+
+        $perPage = min((int) $request->get('per_page', 15), 100);
+        $users = $query->paginate($perPage);
+
+        // Transform users to include role names and school info
+        $users->getCollection()->transform(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at?->toISOString(),
+                'role' => $user->role,
+                'roles' => $user->getRoleNames()->toArray(),
+                'profile_image' => $user->profile_image,
+                'profile_image_url' => $user->profile_image
+                    ? asset('storage/' . $user->profile_image)
+                    : null,
+                'polls_count' => (int) ($user->polls_count ?? 0),
+                'votes_count' => (int) ($user->votes_count ?? 0),
+                'created_at' => $user->created_at?->toISOString(),
+                'updated_at' => $user->updated_at?->toISOString(),
+            ];
+        });
 
         return response()->json($users);
     }
 
-    public function store(StoreUserRequest $request): JsonResponse
+    /**
+     * Show a single user with their roles.
+     */
+    public function show(string $id): JsonResponse
     {
-        $validated = $request->validated();
+        $user = User::with('roles')->findOrFail($id);
+
+        return response()->json([
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at?->toISOString(),
+                'role' => $user->role,
+                'roles' => $user->getRoleNames()->toArray(),
+                'profile_image' => $user->profile_image,
+                'profile_image_url' => $user->profile_image
+                    ? asset('storage/' . $user->profile_image)
+                    : null,
+                'created_at' => $user->created_at?->toISOString(),
+                'updated_at' => $user->updated_at?->toISOString(),
+            ],
+        ]);
+    }
+
+    /**
+     * Create a new user.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role' => ['required', 'string', 'in:admin,teacher,student'],
+        ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'email_verified_at' => now(),
         ]);
 
-        $this->syncProfile($user, $validated);
-
-        $user->forceFill(['email_verified_at' => now()])->save();
-        $user->syncRoles($validated['roles'] ?? []);
-        $user->load(['roles:id,name', 'profile.country', 'profile.province', 'profile.school']);
+        // Assign the Spatie role matching the user's role field
+        $user->assignRole($validated['role']);
 
         return response()->json([
-            'message' => 'User created.',
-            'user' => $this->formatUser($user),
+            'message' => 'User created successfully.',
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'roles' => $user->getRoleNames()->toArray(),
+                'created_at' => $user->created_at?->toISOString(),
+            ],
         ], 201);
     }
 
-    public function show(User $user): JsonResponse
+    /**
+     * Update an existing user.
+     */
+    public function update(Request $request, string $id): JsonResponse
     {
-        $user->load(['roles:id,name', 'profile.country', 'profile.province', 'profile.school']);
+        $user = User::findOrFail($id);
 
-        return response()->json($this->formatUser($user));
-    }
-
-    public function update(UpdateUserRequest $request, User $user): JsonResponse
-    {
-        $validated = $request->validated();
-
-        $user->fill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            'password' => ['sometimes', 'string', 'min:8', 'nullable'],
+            'role' => ['sometimes', 'string', 'in:admin,teacher,student'],
         ]);
 
-        if (! empty($validated['password'])) {
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
+        }
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+        if (isset($validated['password']) && $validated['password']) {
             $user->password = Hash::make($validated['password']);
         }
-
+        if (isset($validated['role'])) {
+            // Sync Spatie role
+            $user->syncRoles([$validated['role']]);
+            $user->role = $validated['role'];
+        }
         $user->save();
-        $this->syncProfile($user, $validated);
-        $user->syncRoles($validated['roles'] ?? []);
-        $user->load(['roles:id,name', 'profile.country', 'profile.province', 'profile.school']);
+
+        $user->load('roles');
 
         return response()->json([
-            'message' => 'User updated.',
-            'user' => $this->formatUser($user),
+            'message' => 'User updated successfully.',
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'roles' => $user->getRoleNames()->toArray(),
+                'updated_at' => $user->updated_at?->toISOString(),
+            ],
         ]);
     }
 
-    public function destroy(Request $request, User $user): JsonResponse
+    /**
+     * Delete a user.
+     */
+    public function destroy(string $id): JsonResponse
     {
-        if ($request->user()->is($user)) {
-            return response()->json([
-                'message' => 'You cannot delete your own account.',
-            ], 403);
+        $user = User::findOrFail($id);
+
+        // Prevent deleting yourself
+        if (request()->user() && request()->user()->id === $user->id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 422);
         }
 
         $user->delete();
 
-        return response()->json([
-            'message' => 'User deleted.',
-        ]);
-    }
-
-    public function roles(): JsonResponse
-    {
-        return response()->json(
-            Role::orderBy('name')->pluck('name')
-        );
-    }
-
-    /**
-     * Format a user for admin responses.
-     *
-     * @return array<string, mixed>
-     */
-    private function formatUser(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified_at' => $user->email_verified_at,
-            'roles' => $user->roles->pluck('name'),
-            'school_name' => $user->profile?->school?->school_name ?? '-',
-            'country_name' => $user->profile?->country?->name ?? '-',
-            'province_name' => $user->profile?->province?->name ?? '-',
-            'created_at' => $user->created_at,
-        ];
-    }
-
-    /**
-     * Create or update the profile data used by admin responses.
-     *
-     * @param  array<string, mixed>  $validated
-     */
-    private function syncProfile(User $user, array $validated): void
-    {
-        $profileData = [];
-
-        $countryName = trim((string) ($validated['country_name'] ?? ''));
-        if ($countryName !== '') {
-            $country = Country::firstOrCreate(
-                ['name' => $countryName],
-                ['code' => Str::upper(Str::substr($countryName, 0, 2))],
-            );
-            $profileData['country_id'] = $country->id;
-        }
-
-        $provinceName = trim((string) ($validated['province_name'] ?? ''));
-        if ($provinceName !== '') {
-            $province = Province::firstOrCreate(
-                ['name' => $provinceName],
-                ['country_id' => $profileData['country_id'] ?? $user->profile?->country_id],
-            );
-            $profileData['province_id'] = $province->id;
-            if (! isset($profileData['country_id']) && $province->country_id !== null) {
-                $profileData['country_id'] = $province->country_id;
-            }
-        }
-
-        $schoolName = trim((string) ($validated['school_name'] ?? ''));
-        if ($schoolName !== '') {
-            $school = School::firstOrCreate(
-                ['school_name' => $schoolName],
-                [
-                    'country_id' => $profileData['country_id'] ?? $user->profile?->country_id,
-                    'province_id' => $profileData['province_id'] ?? $user->profile?->province_id,
-                ],
-            );
-            $profileData['school_id'] = $school->id;
-        }
-
-        if ($profileData === []) {
-            return;
-        }
-
-        $user->profile()->updateOrCreate(
-            ['user_id' => $user->id],
-            $profileData,
-        );
+        return response()->json(['message' => 'User deleted successfully.']);
     }
 }
