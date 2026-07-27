@@ -2,8 +2,12 @@
 
 use App\Models\Question;
 use App\Models\Quiz;
+use App\Models\User;
 
 beforeEach(function () {
+    $this->teacher = User::factory()->create(['role' => 'teacher']);
+    $this->token = $this->teacher->createToken('test-token')->plainTextToken;
+
     // Create a seeded quiz for testing
     $this->quiz = Quiz::factory()->create([
         'id' => 'test-quiz-1',
@@ -16,6 +20,7 @@ beforeEach(function () {
         'shuffle_questions' => false,
         'status' => 'published',
         'due_date' => now()->addDays(7),
+        'teacher_id' => $this->teacher->id,
     ]);
 
     // Create questions
@@ -86,7 +91,7 @@ beforeEach(function () {
 });
 
 it('can list quizzes with questions_count', function () {
-    $response = $this->getJson('/api/v1/classroom/quizzes');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/quizzes');
 
     $response->assertStatus(200)
         ->assertJsonStructure([
@@ -107,7 +112,7 @@ it('can list quizzes with questions_count', function () {
 });
 
 it('can get a single quiz with embedded questions', function () {
-    $response = $this->getJson("/api/v1/classroom/quizzes/{$this->quiz->id}");
+    $response = $this->withToken($this->token)->getJson("/api/v1/classroom/quizzes/{$this->quiz->id}");
 
     $response->assertStatus(200)
         ->assertJsonStructure([
@@ -129,7 +134,7 @@ it('can get a single quiz with embedded questions', function () {
 });
 
 it('can submit a quiz and get score', function () {
-    $response = $this->postJson('/api/v1/classroom/submissions', [
+    $response = $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'John Doe',
         'class_name' => 'Grade 10A',
@@ -161,7 +166,7 @@ it('can submit a quiz and get score', function () {
 });
 
 it('returns fail status when score is below passing', function () {
-    $response = $this->postJson('/api/v1/classroom/submissions', [
+    $response = $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'Jane Doe',
         'class_name' => 'Grade 10A',
@@ -183,7 +188,7 @@ it('returns fail status when score is below passing', function () {
 
 it('can check if a student has submitted', function () {
     // Submit first
-    $this->postJson('/api/v1/classroom/submissions', [
+    $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'Mark',
         'class_name' => 'Grade 10A',
@@ -199,18 +204,18 @@ it('can check if a student has submitted', function () {
     ]);
 
     // Check submitted student
-    $response = $this->getJson('/api/v1/classroom/submissions/check?quizId='.$this->quiz->id.'&studentName=Mark');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/submissions/check?quizId='.$this->quiz->id.'&studentName=Mark');
     $response->assertStatus(200)
         ->assertJson(['hasSubmitted' => true]);
 
     // Check non-submitted student
-    $response = $this->getJson('/api/v1/classroom/submissions/check?quizId='.$this->quiz->id.'&studentName=Unknown');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/submissions/check?quizId='.$this->quiz->id.'&studentName=Unknown');
     $response->assertStatus(200)
         ->assertJson(['hasSubmitted' => false]);
 });
 
 it('can get student submissions', function () {
-    $this->postJson('/api/v1/classroom/submissions', [
+    $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'Alice',
         'class_name' => 'Grade 10A',
@@ -225,7 +230,7 @@ it('can get student submissions', function () {
         'timeTaken' => 90,
     ]);
 
-    $response = $this->getJson('/api/v1/classroom/submissions?quizId='.$this->quiz->id.'&studentName=Alice');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/submissions?quizId='.$this->quiz->id.'&studentName=Alice');
     $response->assertStatus(200)
         ->assertJsonStructure(['data' => ['*' => ['id', 'quizId', 'studentName', 'score', 'percentage', 'status']]]);
     expect($response->json('data'))->toHaveCount(1);
@@ -240,7 +245,7 @@ it('can get rankings with best submission per student', function () {
     ];
 
     foreach ($students as $student) {
-        $this->postJson('/api/v1/classroom/submissions', [
+        $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
             'quizId' => $this->quiz->id,
             'studentName' => $student['name'],
             'class_name' => 'Grade 10A',
@@ -256,7 +261,7 @@ it('can get rankings with best submission per student', function () {
         ]);
     }
 
-    $response = $this->getJson("/api/v1/classroom/rankings/{$this->quiz->id}");
+    $response = $this->withToken($this->token)->getJson("/api/v1/classroom/rankings/{$this->quiz->id}");
     $response->assertStatus(200)
         ->assertJsonStructure([
             'quizId',
@@ -281,7 +286,7 @@ it('can get rankings with best submission per student', function () {
 
 it('allows multiple submissions and best score counts for ranking', function () {
     // First submission - low score
-    $this->postJson('/api/v1/classroom/submissions', [
+    $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'David',
         'class_name' => 'Grade 10A',
@@ -297,7 +302,7 @@ it('allows multiple submissions and best score counts for ranking', function () 
     ]);
 
     // Second submission - better score
-    $this->postJson('/api/v1/classroom/submissions', [
+    $this->withToken($this->token)->postJson('/api/v1/classroom/submissions', [
         'quizId' => $this->quiz->id,
         'studentName' => 'David',
         'class_name' => 'Grade 10A',
@@ -313,20 +318,20 @@ it('allows multiple submissions and best score counts for ranking', function () 
     ]);
 
     // Check rankings - David should have score 60 (best, all 6 correct)
-    $response = $this->getJson("/api/v1/classroom/rankings/{$this->quiz->id}");
+    $response = $this->withToken($this->token)->getJson("/api/v1/classroom/rankings/{$this->quiz->id}");
     $david = collect($response->json('rankings'))->firstWhere('student_name', 'David');
     expect($david)->not->toBeNull()
         ->and($david['score'])->toBe(60);
 });
 
 it('can search quizzes', function () {
-    $response = $this->getJson('/api/v1/classroom/quizzes?search=Test');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/quizzes?search=Test');
     $response->assertStatus(200);
     expect($response->json('data'))->not->toBeEmpty();
 });
 
 it('can filter quizzes by subject', function () {
-    $response = $this->getJson('/api/v1/classroom/quizzes?subject=Testing');
+    $response = $this->withToken($this->token)->getJson('/api/v1/classroom/quizzes?subject=Testing');
     $response->assertStatus(200);
     expect($response->json('data'))->not->toBeEmpty();
 });

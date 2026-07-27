@@ -10,12 +10,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ClassroomQuizController extends Controller
 {
     public function index(Request $request): ResourceCollection
     {
-        $query = Quiz::withCount('questions');
+        $query = Quiz::where('teacher_id', $request->user()->id)->withCount('questions');
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -66,6 +67,7 @@ class ClassroomQuizController extends Controller
         ]);
 
         $quiz = Quiz::create([
+            'teacher_id' => $request->user()->id,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'subject' => $validated['subject'],
@@ -101,9 +103,9 @@ class ClassroomQuizController extends Controller
         return response()->json(['data' => $resource], 201);
     }
 
-    public function show(string $quiz): JsonResponse
+    public function show(Request $request, string $quiz): JsonResponse
     {
-        $quizModel = Quiz::findOrFail($quiz);
+        $quizModel = Quiz::where('teacher_id', $request->user()->id)->findOrFail($quiz);
 
         $quizModel->load(['questions' => fn ($q) => $q->orderBy('order')]);
         $quizModel->loadCount('questions');
@@ -115,7 +117,7 @@ class ClassroomQuizController extends Controller
 
     public function update(Request $request, string $quiz): JsonResponse
     {
-        $quizModel = Quiz::findOrFail($quiz);
+        $quizModel = Quiz::where('teacher_id', $request->user()->id)->findOrFail($quiz);
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
@@ -143,13 +145,13 @@ class ClassroomQuizController extends Controller
 
         // Sync questions if provided
         if ($request->has('questions')) {
-            $existingQuestionIds = $quiz->questions()->pluck('id')->toArray();
+            $existingQuestionIds = $quizModel->questions()->pluck('id')->toArray();
             $incomingQuestionIds = collect($validated['questions'])->pluck('id')->filter()->toArray();
 
             // Delete questions not in the incoming list
             $toDelete = array_diff($existingQuestionIds, $incomingQuestionIds);
             if (! empty($toDelete)) {
-                $quiz->questions()->whereIn('id', $toDelete)->delete();
+                $quizModel->questions()->whereIn('id', $toDelete)->delete();
             }
 
             foreach ($validated['questions'] as $q) {
@@ -164,10 +166,10 @@ class ClassroomQuizController extends Controller
 
                 if (! empty($q['id']) && in_array($q['id'], $existingQuestionIds)) {
                     // Update existing question
-                    $quiz->questions()->where('id', $q['id'])->update($questionData);
+                    $quizModel->questions()->where('id', $q['id'])->update($questionData);
                 } else {
                     // Create new question
-                    $quiz->questions()->create(array_merge(
+                    $quizModel->questions()->create(array_merge(
                         ['id' => $q['id'] ?? (string) Str::uuid()],
                         $questionData
                     ));
@@ -184,9 +186,9 @@ class ClassroomQuizController extends Controller
         return response()->json(['data' => $resource]);
     }
 
-    public function destroy(string $quiz): JsonResponse
+    public function destroy(Request $request, string $quiz): JsonResponse
     {
-        $quizModel = Quiz::findOrFail($quiz);
+        $quizModel = Quiz::where('teacher_id', $request->user()->id)->findOrFail($quiz);
         $quizModel->delete();
 
         return response()->json(null, 204);

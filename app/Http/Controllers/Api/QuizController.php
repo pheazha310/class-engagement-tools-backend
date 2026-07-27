@@ -10,12 +10,13 @@ use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class QuizController extends Controller
 {
     public function index(Request $request): ResourceCollection
     {
-        $query = Quiz::query();
+        $query = Quiz::where('teacher_id', $request->user()->id);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -45,7 +46,7 @@ class QuizController extends Controller
     public function store(StoreQuizRequest $request): JsonResponse
     {
         $quiz = Quiz::create([
-            'teacher_id' => $request->user()?->id ?? $request->input('teacher_id'),
+            'teacher_id' => $request->user()->id,
             'title' => $request->input('title'),
             'description' => $request->input('description'),
             'subject' => $request->input('subject'),
@@ -60,20 +61,32 @@ class QuizController extends Controller
         return response()->json(['data' => new QuizResource($quiz)], 201);
     }
 
-    public function show(Quiz $quiz): JsonResponse
+    public function show(Request $request, Quiz $quiz): JsonResponse
     {
+        if ($quiz->teacher_id !== $request->user()->id) {
+            throw new AccessDeniedHttpException();
+        }
+
         return response()->json(['data' => new QuizResource($quiz)]);
     }
 
     public function update(UpdateQuizRequest $request, Quiz $quiz): JsonResponse
     {
+        if ($quiz->teacher_id !== $request->user()->id) {
+            throw new AccessDeniedHttpException();
+        }
+
         $quiz->update($request->validated());
 
         return response()->json(['data' => new QuizResource($quiz->fresh())]);
     }
 
-    public function destroy(Quiz $quiz): JsonResponse
+    public function destroy(Request $request, Quiz $quiz): JsonResponse
     {
+        if ($quiz->teacher_id !== $request->user()->id) {
+            throw new AccessDeniedHttpException();
+        }
+
         $quiz->delete();
 
         return response()->json(['message' => 'Quiz deleted successfully.']);
@@ -82,7 +95,7 @@ class QuizController extends Controller
     public function duplicate(Request $request, Quiz $quiz): JsonResponse
     {
         $copy = Quiz::create([
-            'teacher_id' => $quiz->teacher_id,
+            'teacher_id' => $request->user()->id,
             'title' => $quiz->title.' (Copy)',
             'description' => $quiz->description,
             'subject' => $quiz->subject,

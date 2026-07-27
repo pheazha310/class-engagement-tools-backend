@@ -40,13 +40,15 @@ Route::get('game-histories', [GameHistoryController::class, 'index'])->middlewar
 Route::get('game-histories/{id}', [GameHistoryController::class, 'show'])->middleware(['web', 'auth:sanctum']);
 Route::get('game-histories/{id}/export/{format}', [GameHistoryController::class, 'export'])->middleware(['web', 'auth:sanctum']);
 
-// Quiz routes — public (no auth required)
-Route::get('quizzes', [QuizController::class, 'index']);
-Route::post('quizzes', [QuizController::class, 'store']);
-Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
-Route::put('quizzes/{quiz}', [QuizController::class, 'update']);
-Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy']);
-Route::post('quizzes/{quiz}/duplicate', [QuizController::class, 'duplicate']);
+// Quiz routes — authenticated (teacher)
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
+    Route::get('quizzes', [QuizController::class, 'index']);
+    Route::post('quizzes', [QuizController::class, 'store']);
+    Route::get('quizzes/{quiz}', [QuizController::class, 'show']);
+    Route::put('quizzes/{quiz}', [QuizController::class, 'update']);
+    Route::delete('quizzes/{quiz}', [QuizController::class, 'destroy']);
+    Route::post('quizzes/{quiz}/duplicate', [QuizController::class, 'duplicate']);
+});
 
 // Question routes — public (no auth required)
 Route::get('quizzes/{quiz}/questions', [QuizQuestionController::class, 'index']);
@@ -69,21 +71,23 @@ Route::get('quizzes/{quiz}/report/excel', [QuizReportController::class, 'exportE
 // Classroom Quiz API (v1)
 // Matches frontend Classroom Quiz module spec
 // ==============================
-Route::prefix('v1/classroom')->group(function () {
-    // Quiz CRUD
-    Route::get('quizzes', [ClassroomQuizController::class, 'index']);
-    Route::post('quizzes', [ClassroomQuizController::class, 'store']);
-    Route::get('quizzes/{quiz}', [ClassroomQuizController::class, 'show']);
-    Route::put('quizzes/{quiz}', [ClassroomQuizController::class, 'update']);
-    Route::delete('quizzes/{quiz}', [ClassroomQuizController::class, 'destroy']);
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
+    Route::prefix('v1/classroom')->group(function () {
+        // Quiz CRUD
+        Route::get('quizzes', [ClassroomQuizController::class, 'index']);
+        Route::post('quizzes', [ClassroomQuizController::class, 'store']);
+        Route::get('quizzes/{quiz}', [ClassroomQuizController::class, 'show']);
+        Route::put('quizzes/{quiz}', [ClassroomQuizController::class, 'update']);
+        Route::delete('quizzes/{quiz}', [ClassroomQuizController::class, 'destroy']);
 
-    // Submissions
-    Route::post('submissions', [ClassroomSubmissionController::class, 'store']);
-    Route::get('submissions', [ClassroomSubmissionController::class, 'index']);
-    Route::get('submissions/check', [ClassroomSubmissionController::class, 'check']);
+        // Submissions
+        Route::post('submissions', [ClassroomSubmissionController::class, 'store']);
+        Route::get('submissions', [ClassroomSubmissionController::class, 'index']);
+        Route::get('submissions/check', [ClassroomSubmissionController::class, 'check']);
 
-    // Rankings
-    Route::get('rankings/{quiz}', [ClassroomRankingController::class, 'index']);
+        // Rankings
+        Route::get('rankings/{quiz}', [ClassroomRankingController::class, 'index']);
+    });
 });
 
 // Public poll routes (no auth required)
