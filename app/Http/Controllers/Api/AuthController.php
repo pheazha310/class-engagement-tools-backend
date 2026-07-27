@@ -53,8 +53,6 @@ class AuthController extends Controller
 
     protected function formatUser($user): array
     {
-        $user->loadMissing(['profile.school']);
-
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -64,7 +62,7 @@ class AuthController extends Controller
             'profile_image_url' => $user->profile_image
                 ? asset('storage/'.$user->profile_image)
                 : null,
-            'school' => $user->profile?->school?->school_name ?? null,
+            'school' => null, // loaded separately when needed
         ];
     }
 }
