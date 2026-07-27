@@ -2,9 +2,8 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Toaster } from 'vue-sonner'
-import { ChevronRight, Home } from '@lucide/vue'
+import { ChevronRight, Home, Menu } from '@lucide/vue'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
-import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 
 const sidebarCollapsed = ref(false)
 const mobileOpen = ref(false)
@@ -83,13 +82,18 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => {
       @close-mobile="closeMobile"
     />
 
-    <AdminNavbar
-      :collapsed="sidebarCollapsed"
-      @toggle-mobile="toggleMobile"
-    />
+    <!-- Floating mobile hamburger button (visible only on small screens) -->
+    <button
+      class="fixed top-3 left-3 z-[60] flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-md text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 lg:hidden"
+      type="button"
+      @click="toggleMobile"
+      aria-label="Open sidebar menu"
+    >
+      <Menu class="w-5 h-5" />
+    </button>
 
     <main
-      class="pt-16 min-h-screen transition-all duration-300"
+      class="min-h-screen transition-all duration-300"
       :class="sidebarCollapsed ? 'lg:ml-[68px]' : 'lg:ml-[260px]'"
     >
       <div class="px-4 md:px-6 lg:px-8 pt-4 pb-0">
