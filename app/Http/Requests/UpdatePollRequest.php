@@ -22,6 +22,15 @@ class UpdatePollRequest extends FormRequest
 
     public function rules(): array
     {
+        $pollType = (string) $this->input('poll_type', $this->route('poll')?->poll_type ?? Poll::POLL_TYPE_MULTIPLE_CHOICE);
+
+        $optionsRules = ['sometimes', 'nullable', 'array', 'max:20'];
+        $optionItemRules = ['required', 'string', 'max:255', 'distinct'];
+
+        if ($pollType === Poll::POLL_TYPE_MULTIPLE_CHOICE) {
+            $optionsRules = ['sometimes', 'required', 'array', 'min:2', 'max:20'];
+        }
+
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -31,8 +40,8 @@ class UpdatePollRequest extends FormRequest
             'allow_multiple_votes' => ['boolean'],
             'anonymous' => ['boolean'],
             'show_results' => ['boolean'],
-            'options' => ['sometimes', 'required', 'array', 'min:2', 'max:20'],
-            'options.*' => ['required', 'string', 'max:255', 'distinct'],
+            'options' => $optionsRules,
+            'options.*' => $optionItemRules,
         ];
     }
 

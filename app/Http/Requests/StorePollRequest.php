@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Poll;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePollRequest extends FormRequest
@@ -13,8 +14,18 @@ class StorePollRequest extends FormRequest
 
     public function rules(): array
     {
+        $pollType = (string) $this->input('poll_type', Poll::POLL_TYPE_MULTIPLE_CHOICE);
+
+        $optionsRules = ['nullable', 'array', 'max:20'];
+        $optionItemRules = ['sometimes', 'string', 'max:255', 'distinct'];
+
+        if ($pollType === Poll::POLL_TYPE_MULTIPLE_CHOICE) {
+            $optionsRules = ['required', 'array', 'min:2', 'max:20'];
+            $optionItemRules = ['required', 'string', 'max:255', 'distinct'];
+        }
+
         return [
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'question' => ['required', 'string', 'max:1000'],
             'poll_type' => ['required', 'string', 'in:multiple_choice,yes_no,rating'],
@@ -22,8 +33,8 @@ class StorePollRequest extends FormRequest
             'allow_multiple_votes' => ['boolean'],
             'anonymous' => ['boolean'],
             'show_results' => ['boolean'],
-            'options' => ['required', 'array', 'min:2', 'max:20'],
-            'options.*' => ['required', 'string', 'max:255', 'distinct'],
+            'options' => $optionsRules,
+            'options.*' => $optionItemRules,
         ];
     }
 

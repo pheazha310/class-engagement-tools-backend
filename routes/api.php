@@ -96,9 +96,11 @@ Route::prefix('v1/classroom')->group(function () {
 
 // Public poll routes (no auth required)
 Route::get('polls/active', [PollController::class, 'activePolls']);
+Route::get('polls/share/{token}', [PollController::class, 'showByShareToken']);
 Route::get('polls/public/{token}', [PollController::class, 'showByToken']);
 Route::get('polls/public/{token}/results', [PollController::class, 'publicResults']);
-Route::post('polls/public/{token}/vote', [VoteController::class, 'vote']);
+Route::post('polls/public/{token}/vote', [VoteController::class, 'vote'])->middleware('throttle:30,1');
+Route::get('polls/join/{roomCode}', [PollController::class, 'showByRoomCode'])->middleware('throttle:30,1');
 
 // Soundboard routes — public (no auth required)
 Route::get('sounds', [SoundController::class, 'index']);
@@ -123,12 +125,14 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('teacher/students', [TeacherDashboardController::class, 'students']);
 
     Route::get('polls', [PollController::class, 'index']);
-    Route::post('polls', [PollController::class, 'store']);
+    Route::post('polls', [PollController::class, 'store'])->middleware('throttle:30,1');
     Route::get('polls/{poll}', [PollController::class, 'show']);
-    Route::put('polls/{poll}', [PollController::class, 'update']);
-    Route::delete('polls/{poll}', [PollController::class, 'destroy']);
-    Route::post('polls/{poll}/start', [PollController::class, 'start']);
-    Route::post('polls/{poll}/end', [PollController::class, 'end']);
+    Route::put('polls/{poll}', [PollController::class, 'update'])->middleware('throttle:30,1');
+    Route::delete('polls/{poll}', [PollController::class, 'destroy'])->middleware('throttle:10,1');
+    Route::post('polls/{poll}/start', [PollController::class, 'start'])->middleware('throttle:30,1');
+    Route::post('polls/{poll}/end', [PollController::class, 'end'])->middleware('throttle:30,1');
+    Route::post('polls/{poll}/vote', [VoteController::class, 'voteByPoll'])->middleware('throttle:60,1');
+    Route::get('polls/{poll}/export/{format}', [PollController::class, 'export']);
 });
 
 // Wheel routes — authenticated

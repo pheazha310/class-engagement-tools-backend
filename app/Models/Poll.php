@@ -13,6 +13,10 @@ class Poll extends Model
 {
     use HasFactory, HasUuids;
 
+    public const POLL_TYPE_MULTIPLE_CHOICE = 'multiple_choice';
+    public const POLL_TYPE_YES_NO = 'yes_no';
+    public const POLL_TYPE_RATING = 'rating';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -28,6 +32,7 @@ class Poll extends Model
         'anonymous',
         'show_results',
         'public_token',
+        'room_code',
         'created_by',
         'started_at',
         'ended_at',
@@ -49,9 +54,42 @@ class Poll extends Model
     {
         static::creating(function (Poll $poll) {
             if (empty($poll->public_token)) {
-                $poll->public_token = (string) Str::uuid();
+                $poll->public_token = Str::random(32);
+            }
+            if (empty($poll->room_code)) {
+                $poll->room_code = self::generateUniqueRoomCode();
             }
         });
+    }
+
+    /**
+     * Generate a unique 6-character alphanumeric room code.
+     */
+    private static function generateUniqueRoomCode(): string
+    {
+        $maxAttempts = 10;
+        do {
+            $code = strtoupper(Str::random(6));
+            $exists = self::where('room_code', $code)->exists();
+            $maxAttempts--;
+        } while ($exists && $maxAttempts > 0);
+
+        return $code;
+    }
+
+    public function setTeacherIdAttribute($value): void
+    {
+        $this->attributes['created_by'] = $value;
+    }
+
+    public function getTeacherIdAttribute(): mixed
+    {
+        return $this->attributes['created_by'] ?? null;
+    }
+
+    public function getShareTokenAttribute(): string
+    {
+        return $this->public_token;
     }
 
     public function creator(): BelongsTo
@@ -94,6 +132,11 @@ class Poll extends Model
         return $query->where('public_token', $token);
     }
 
+    public function scopeByRoomCode($query, string $roomCode)
+    {
+        return $query->where('room_code', $roomCode);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -107,5 +150,12 @@ class Poll extends Model
     public function scopeClosed($query)
     {
         return $query->where('status', 'closed');
+    }
+
+    public function scopeActiveWithDuration($query)
+    {
+        return $query->where('status', 'active')
+            ->whereNotNull('duration_minutes')
+            ->whereNotNull('started_at');
     }
 }

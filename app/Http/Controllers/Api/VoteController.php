@@ -19,18 +19,29 @@ class VoteController extends Controller
             return response()->json(['message' => 'Poll not found.'], 404);
         }
 
+        return $this->recordVote($request, $poll);
+    }
+
+    public function voteByPoll(VoteRequest $request, Poll $poll): JsonResponse
+    {
+        return $this->recordVote($request, $poll);
+    }
+
+    private function recordVote(VoteRequest $request, Poll $poll): JsonResponse
+    {
         if (! $poll->isActive()) {
             return response()->json(['message' => 'This poll is not currently active.'], 422);
         }
 
-        $option = PollOption::findOrFail($request->validated()['option_id']);
+        $validated = $request->validated();
+        $option = PollOption::findOrFail($validated['option_id']);
 
         if ($option->poll_id !== $poll->id) {
             return response()->json(['message' => 'Invalid option for this poll.'], 422);
         }
 
         $user = $request->user();
-        $guestToken = $request->validated()['guest_token'];
+        $guestToken = $validated['guest_token'] ?? null;
 
         if ($user) {
             if (! $user->isStudent()) {

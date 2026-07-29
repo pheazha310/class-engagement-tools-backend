@@ -45,7 +45,11 @@ class PollRepository implements PollRepositoryInterface
 
     public function findExpired(): iterable
     {
-        return Poll::expired()->get();
+        $polls = Poll::activeWithDuration()->get();
+
+        return $polls->filter(function (Poll $poll) {
+            return $poll->started_at->addMinutes($poll->duration_minutes)->isPast();
+        });
     }
 
     public function findByTeacher(int $teacherId, int $perPage = 10): LengthAwarePaginator

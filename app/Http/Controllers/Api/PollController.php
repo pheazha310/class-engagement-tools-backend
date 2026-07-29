@@ -9,12 +9,18 @@ use App\Http\Resources\PollResource;
 use App\Http\Resources\PollResultResource;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Services\PollResultExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class PollController extends Controller
 {
+    public function __construct(
+        private readonly PollResultExportService $exportService,
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $polls = Poll::byCreator($request->user()->id)
@@ -28,9 +34,10 @@ class PollController extends Controller
     public function store(StorePollRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $options = $this->resolveOptionsForType($data['poll_type'], $data['options'] ?? []);
 
         $poll = Poll::create([
-            'title' => $data['title'],
+            'title' => $data['title'] ?? $data['question'],
             'description' => $data['description'] ?? null,
             'question' => $data['question'],
             'poll_type' => $data['poll_type'],
@@ -41,7 +48,7 @@ class PollController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
-        foreach ($data['options'] as $order => $optionText) {
+        foreach ($options as $order => $optionText) {
             PollOption::create([
                 'poll_id' => $poll->id,
                 'option_text' => $optionText,
@@ -73,21 +80,23 @@ class PollController extends Controller
     public function update(UpdatePollRequest $request, Poll $poll): JsonResponse
     {
         $data = $request->validated();
+        $pollType = $data['poll_type'] ?? $poll->poll_type;
 
         $poll->update([
             'title' => $data['title'] ?? $poll->title,
             'description' => array_key_exists('description', $data) ? $data['description'] : $poll->description,
             'question' => $data['question'] ?? $poll->question,
-            'poll_type' => $data['poll_type'] ?? $poll->poll_type,
+            'poll_type' => $pollType,
             'duration_minutes' => array_key_exists('duration_minutes', $data) ? $data['duration_minutes'] : $poll->duration_minutes,
             'allow_multiple_votes' => $data['allow_multiple_votes'] ?? $poll->allow_multiple_votes,
             'anonymous' => $data['anonymous'] ?? $poll->anonymous,
             'show_results' => $data['show_results'] ?? $poll->show_results,
         ]);
 
-        if (isset($data['options'])) {
+        if (array_key_exists('options', $data) || in_array($pollType, [Poll::POLL_TYPE_YES_NO, Poll::POLL_TYPE_RATING], true)) {
+            $options = $this->resolveOptionsForType($pollType, $data['options'] ?? []);
             $poll->options()->delete();
-            foreach ($data['options'] as $order => $optionText) {
+            foreach ($options as $order => $optionText) {
                 PollOption::create([
                     'poll_id' => $poll->id,
                     'option_text' => $optionText,
@@ -195,6 +204,28 @@ class PollController extends Controller
         ]);
     }
 
+    public function showByShareToken(string $token): JsonResponse
+    {
+        return $this->showByToken($token);
+    }
+
+    public function showByRoomCode(string $roomCode): JsonResponse
+    {
+        $poll = Poll::byRoomCode(strtoupper($roomCode))->with('options')->first();
+
+        if (! $poll) {
+            return response()->json(['message' => 'Poll not found.'], 404);
+        }
+
+        if (! $poll->isActive()) {
+            return response()->json(['message' => 'This poll is not currently active.'], 404);
+        }
+
+        return response()->json([
+            'poll' => new PollResource($poll),
+        ]);
+    }
+
     public function publicResults(string $token): JsonResponse
     {
         $poll = Poll::byPublicToken($token)->with('options.votes')->first();
@@ -206,5 +237,53 @@ class PollController extends Controller
         return response()->json([
             'results' => new PollResultResource($poll),
         ]);
+    }
+
+    public function export(Request $request, Poll $poll, string $format): SymfonyResponse
+    {
+        if ($poll->created_by !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $format = strtolower($format);
+
+        if ($format === 'csv') {
+            $content = $this->exportService->exportCsv($poll);
+            $fileName = "poll-result-{$poll->id}.csv";
+
+            return response($content, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+                'Content-Length' => strlen($content),
+            ]);
+        }
+
+        if ($format === 'pdf') {
+            $content = $this->exportService->exportPdf($poll);
+            $fileName = "poll-result-{$poll->id}.pdf";
+
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+                'Content-Length' => strlen($content),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Invalid export format. Supported formats: csv, pdf.',
+        ], 400);
+    }
+
+    /**
+     * @param  array<int, string>  $provided
+     * @return array<int, string>
+     */
+    private function resolveOptionsForType(string $pollType, array $provided): array
+    {
+        return match ($pollType) {
+            Poll::POLL_TYPE_YES_NO => ['Yes', 'No'],
+            Poll::POLL_TYPE_RATING => ['1', '2', '3', '4', '5'],
+            default => $provided,
+        };
     }
 }
