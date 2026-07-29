@@ -5,7 +5,6 @@ use App\Models\PollOption;
 use App\Models\User;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\assertDatabaseCount;
 
 beforeEach(function () {
     $this->teacher = User::factory()->create(['role' => 'teacher']);

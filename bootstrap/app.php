@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\AdminSessionAuth;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -8,7 +7,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -21,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->statefulApi();
+
         $middleware->encryptCookies(except: [
             'appearance',
             'sidebar_state',
@@ -35,10 +35,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'register',
             'forgot-password',
             'reset-password',
-        ]);
-
-        $middleware->web(prepend: [
-            EnsureFrontendRequestsAreStateful::class,
         ]);
 
         $middleware->web(append: [

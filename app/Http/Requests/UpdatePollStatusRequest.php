@@ -13,7 +13,7 @@ class UpdatePollStatusRequest extends FormRequest
 
         return $this->user()?->isTeacher()
             && $poll instanceof Poll
-            && $poll->teacher_id === $this->user()->id;
+            && $poll->created_by === $this->user()->id;
     }
 
     public function rules(): array

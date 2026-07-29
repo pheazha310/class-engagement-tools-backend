@@ -2,7 +2,6 @@
 
 use App\Models\Poll;
 use App\Models\User;
-use App\Models\Vote;
 
 use function Pest\Laravel\actingAs;
 

@@ -3,16 +3,18 @@
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Role;
 
 // ─── Admin SPA entry point ───
 // This renders the Inertia admin dashboard shell, which bootstraps
 // the admin Vue Router for all child pages (users, roles, schools, etc.)
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('dashboard/{any?}', function () {
         // Fetch initial users data on the server to avoid unauthenticated API calls
         // from the Vue SPA (the Inertia page load is properly session-authenticated).
-        $usersQuery = \App\Models\User::with('roles')
+        $usersQuery = User::with('roles')
             ->withCount(['polls', 'votes'])
             ->orderBy('created_at', 'desc');
 
@@ -28,7 +30,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
                 'roles' => $user->getRoleNames()->toArray(),
                 'profile_image' => $user->profile_image,
                 'profile_image_url' => $user->profile_image
-                    ? asset('storage/' . $user->profile_image)
+                    ? asset('storage/'.$user->profile_image)
                     : null,
                 'polls_count' => (int) ($user->polls_count ?? 0),
                 'votes_count' => (int) ($user->votes_count ?? 0),
@@ -38,23 +40,25 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         });
 
         // Compute real dashboard stats from the database
-        $totalUsers = \App\Models\User::count();
-        $students = \App\Models\User::where('role', 'student')->count();
-        $teachers = \App\Models\User::where('role', 'teacher')->count();
-        $admins = \App\Models\User::where('role', 'admin')->count();
+        $totalUsers = User::count();
+        $students = User::where('role', 'student')->count();
+        $teachers = User::where('role', 'teacher')->count();
+        $admins = User::where('role', 'admin')->count();
 
         $currentUser = request()->user();
         $initials = '';
         if ($currentUser) {
             $parts = explode(' ', trim($currentUser->name));
             foreach ($parts as $part) {
-                if (!empty($part)) $initials .= strtoupper($part[0]);
+                if (! empty($part)) {
+                    $initials .= strtoupper($part[0]);
+                }
             }
             $initials = substr($initials, 0, 2);
         }
 
         // Fetch roles data from the database
-        $roles = \Spatie\Permission\Models\Role::withCount('users')
+        $roles = Role::withCount('users')
             ->get()
             ->map(function ($role) {
                 return [
@@ -98,7 +102,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
 // ─── Admin data API routes ───
 // These are used by the admin Vue SPA to fetch/manage data.
-Route::middleware(['auth', 'role:admin'])->prefix('api/admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('api/admin')->group(function () {
     // Users
     Route::get('users', [AdminUserController::class, 'index']);
     Route::post('users', [AdminUserController::class, 'store']);

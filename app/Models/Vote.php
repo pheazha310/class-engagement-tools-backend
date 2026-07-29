@@ -20,7 +20,16 @@ class Vote extends Model
         'poll_option_id',
         'user_id',
         'guest_token',
+        'points',
+        'text_response',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'points' => 'integer',
+        ];
+    }
 
     public function poll(): BelongsTo
     {

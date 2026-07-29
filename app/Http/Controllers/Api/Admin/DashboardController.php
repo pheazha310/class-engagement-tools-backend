@@ -125,6 +125,7 @@ class DashboardController extends Controller
                 $initials .= strtoupper($part[0]);
             }
         }
+
         return substr($initials, 0, 2);
     }
 }

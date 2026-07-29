@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Poll extends Model
@@ -83,6 +82,11 @@ class Poll extends Model
     public function isClosed(): bool
     {
         return $this->status === 'closed';
+    }
+
+    public function isOpenText(): bool
+    {
+        return $this->poll_type === 'open_text';
     }
 
     public function scopeExpired($query)

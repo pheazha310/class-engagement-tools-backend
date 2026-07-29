@@ -14,7 +14,7 @@ class PollPolicy
 
     public function view(User $user, Poll $poll): bool
     {
-        return $user->isTeacher() && $poll->teacher_id === $user->id;
+        return $user->isTeacher() && $poll->created_by === $user->id;
     }
 
     public function create(User $user): bool
@@ -25,25 +25,25 @@ class PollPolicy
     public function update(User $user, Poll $poll): bool
     {
         return $user->isTeacher()
-            && $poll->teacher_id === $user->id
+            && $poll->created_by === $user->id
             && $poll->isDraft();
     }
 
     public function delete(User $user, Poll $poll): bool
     {
         return $user->isTeacher()
-            && $poll->teacher_id === $user->id
+            && $poll->created_by === $user->id
             && $poll->isDraft();
     }
 
     public function start(User $user, Poll $poll): bool
     {
-        return $user->isTeacher() && $poll->teacher_id === $user->id;
+        return $user->isTeacher() && $poll->created_by === $user->id;
     }
 
     public function end(User $user, Poll $poll): bool
     {
-        return $user->isTeacher() && $poll->teacher_id === $user->id;
+        return $user->isTeacher() && $poll->created_by === $user->id;
     }
 
     public function vote(User $user, Poll $poll): bool

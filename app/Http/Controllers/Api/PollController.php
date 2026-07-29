@@ -13,9 +13,15 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PollController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection|JsonResponse
     {
-        $polls = Poll::byCreator($request->user()->id)
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $polls = Poll::byCreator($user->id)
             ->with('options')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -27,36 +33,67 @@ class PollController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isTeacher()) {
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if (! $user->isTeacher()) {
             return response()->json(['message' => 'Only teachers can create polls.'], 403);
         }
 
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'question' => ['required', 'string', 'max:1000'],
             'poll_type' => ['nullable', 'string', 'in:multiple_choice,single_choice,yes_no,true_false,rating,open_text'],
-            'options' => ['required', 'array', 'min:2', 'max:20'],
+            'options' => ['nullable', 'array', 'min:2', 'max:20'],
             'options.*' => ['required', 'string', 'max:255'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
             'allow_multiple_votes' => ['boolean'],
             'anonymous' => ['boolean'],
             'show_results' => ['boolean'],
+            // Frontend compatibility fields
+            'is_multiple_choice' => ['boolean'],
+            'is_anonymous' => ['boolean'],
+            'is_quiz' => ['boolean'],
+            'is_open_text' => ['boolean'],
+            'max_points' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
+
+        // Determine poll_type from frontend format if not directly provided
+        $pollType = $validated['poll_type'] ?? null;
+        if (! $pollType) {
+            if (! empty($validated['is_open_text'])) {
+                $pollType = 'open_text';
+            } elseif (! empty($validated['is_multiple_choice'])) {
+                $pollType = 'multiple_choice';
+            } else {
+                $pollType = 'single_choice';
+            }
+        }
+
+        // Use question as title if title not provided
+        $title = $validated['title'] ?? $validated['question'];
+
+        // If options is empty but is_open_text, allow it
+        $options = $validated['options'] ?? [];
+        if (empty($options) && $pollType === 'open_text') {
+            $options = [];
+        }
 
         $poll = Poll::create([
-            'title' => $validated['title'],
+            'title' => $title,
             'description' => $validated['description'] ?? null,
             'question' => $validated['question'],
-            'poll_type' => $validated['poll_type'] ?? 'multiple_choice',
+            'poll_type' => $pollType,
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'allow_multiple_votes' => $validated['allow_multiple_votes'] ?? false,
-            'anonymous' => $validated['anonymous'] ?? true,
+            'anonymous' => $validated['anonymous'] ?? ($validated['is_anonymous'] ?? true),
             'show_results' => $validated['show_results'] ?? true,
-            'created_by' => $request->user()->id,
+            'created_by' => $user->id,
         ]);
 
-        foreach ($validated['options'] as $order => $optionText) {
+        foreach ($options as $order => $optionText) {
             PollOption::create([
                 'poll_id' => $poll->id,
                 'option_text' => $optionText,
@@ -68,19 +105,24 @@ class PollController extends Controller
 
         return response()->json([
             'message' => 'Poll created successfully.',
+            'data' => new PollResource($poll),
             'poll' => new PollResource($poll),
         ], 201);
     }
 
     public function show(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->created_by !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
+        // Allow public access to active polls (for voting)
+        if ($poll->created_by !== $request->user()?->id) {
+            if (! $poll->isActive()) {
+                return response()->json(['message' => 'Poll not found.'], 404);
+            }
         }
 
         $poll->load('options');
 
         return response()->json([
+            'data' => new PollResource($poll),
             'poll' => new PollResource($poll),
         ]);
     }
@@ -132,7 +174,13 @@ class PollController extends Controller
 
     public function destroy(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->created_by !== $request->user()->id) {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($poll->created_by !== $user->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -147,7 +195,13 @@ class PollController extends Controller
 
     public function start(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->created_by !== $request->user()->id) {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($poll->created_by !== $user->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -170,7 +224,13 @@ class PollController extends Controller
 
     public function end(Request $request, Poll $poll): JsonResponse
     {
-        if ($poll->created_by !== $request->user()->id) {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($poll->created_by !== $user->id) {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -191,13 +251,31 @@ class PollController extends Controller
         ]);
     }
 
-    public function activePolls(): JsonResponse
+    public function activePolls(Request $request): JsonResponse
     {
         $polls = Poll::active()
             ->select(['id', 'question', 'title', 'poll_type', 'public_token', 'duration_minutes', 'started_at', 'anonymous', 'allow_multiple_votes', 'created_at'])
             ->withCount('options')
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // If a single poll exists and voter_token is provided, return it in { poll, hasVoted } format
+        $voterToken = $request->query('voter_token');
+        if ($polls->count() === 1 && $voterToken) {
+            $poll = $polls->first();
+            $poll->load('options');
+            $hasVoted = Vote::where('poll_id', $poll->id)
+                ->where(function ($q) use ($voterToken) {
+                    $q->where('guest_token', $voterToken)
+                        ->orWhere('user_id', $voterToken);
+                })
+                ->exists();
+
+            return response()->json([
+                'poll' => new PollResource($poll),
+                'hasVoted' => $hasVoted,
+            ]);
+        }
 
         return response()->json([
             'polls' => $polls,
@@ -254,6 +332,43 @@ class PollController extends Controller
 
         return response()->json([
             'results' => new PollResultResource($poll),
+        ]);
+    }
+
+    public function results(Request $request, Poll $poll): JsonResponse
+    {
+        $poll->load('options.votes');
+
+        $totalVotes = $poll->votes()->count();
+
+        $results = $poll->options->map(function ($option) use ($totalVotes) {
+            $votes = $option->votes->count();
+
+            return [
+                'id' => $option->id,
+                'option' => $option->option_text,
+                'votes' => $votes,
+                'percentage' => $totalVotes > 0 ? round(($votes / $totalVotes) * 100, 1) : 0,
+            ];
+        });
+
+        return response()->json([
+            'data' => [
+                'question' => $poll->question,
+                'status' => $poll->status,
+                'totalVotes' => $totalVotes,
+                'totalPoints' => null,
+                'results' => $results->toArray(),
+            ],
+        ]);
+    }
+
+    public function qrCode(Request $request, Poll $poll): JsonResponse
+    {
+        return response()->json([
+            'room_code' => $poll->public_token ? substr($poll->public_token, 0, 6) : null,
+            'join_url' => url('/vote/'.$poll->public_token),
+            'poll_id' => $poll->id,
         ]);
     }
 }
