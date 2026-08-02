@@ -346,6 +346,47 @@ class TeacherDashboardController extends Controller
         ]);
     }
 
+    public function activityHistory(Request $request): JsonResponse
+    {
+        $teacherId = $request->user()->id;
+
+        $validated = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date'],
+            'activity_type' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $perPage = min((int) ($validated['per_page'] ?? 20), 100);
+
+        $activities = GameHistory::where('teacher_id', $teacherId)
+            ->when($validated['start_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
+            ->when($validated['end_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
+            ->when($validated['activity_type'] ?? null, fn ($q, $type) => $q->where('game_type', $type))
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+
+        $mapped = $activities->map(function (GameHistory $history): array {
+            return [
+                'id' => $history->id,
+                'teacher_id' => $history->teacher_id,
+                'activity_type' => $history->game_type,
+                'activity_data' => $history->settings ?? [],
+                'created_at' => Carbon::parse($history->created_at)->toIso8601String(),
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'data' => [
+                'data' => $mapped,
+                'current_page' => $activities->currentPage(),
+                'last_page' => $activities->lastPage(),
+                'per_page' => $activities->perPage(),
+                'total' => $activities->total(),
+            ],
+        ]);
+    }
+
     public function students(Request $request): JsonResponse
     {
         $teacherId = $request->user()->id;

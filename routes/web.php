@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+// Redirect root to backend login
 Route::redirect('/', '/login');
 
 Route::redirect('dashboard', '/admin/dashboard')->name('dashboard');

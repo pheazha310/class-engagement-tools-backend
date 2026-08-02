@@ -58,7 +58,7 @@ defineProps<{
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
-        class="flex flex-col gap-5"
+        class="flex flex-col gap-4"
     >
         <!-- Email Field -->
         <div class="grid gap-1.5">
@@ -81,8 +81,8 @@ defineProps<{
                     :tabindex="1"
                     autocomplete="email"
                     placeholder="admin@example.com"
-                    class="h-11 pl-10 border-gray-200 bg-white/50 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus-visible:border-blue-400 focus-visible:ring-4 focus-visible:ring-blue-100 dark:border-gray-700 dark:bg-gray-800/50 dark:placeholder:text-gray-500 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-900/30"
-                    :class="{ 'ring-4 ring-blue-100 dark:ring-blue-900/30 border-blue-400 dark:border-blue-500': emailFocused }"
+                    class="h-10 pl-10 border-gray-200 bg-white/50 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus-visible:border-blue-400 focus-visible:ring-3 focus-visible:ring-blue-100 dark:border-gray-700 dark:bg-gray-800/50 dark:placeholder:text-gray-500 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-900/30"
+                    :class="{ 'ring-3 ring-blue-100 dark:ring-blue-900/30 border-blue-400 dark:border-blue-500': emailFocused }"
                     @focus="emailFocused = true"
                     @blur="emailFocused = false"
                 />
@@ -129,8 +129,8 @@ defineProps<{
                     :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Enter your password"
-                    class="h-11 pl-10 pr-12 border-gray-200 bg-white/50 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus-visible:border-blue-400 focus-visible:ring-4 focus-visible:ring-blue-100 dark:border-gray-700 dark:bg-gray-800/50 dark:placeholder:text-gray-500 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-900/30"
-                    :class="{ 'ring-4 ring-blue-100 dark:ring-blue-900/30 border-blue-400 dark:border-blue-500': passwordFocused }"
+                    class="h-10 pl-10 pr-12 border-gray-200 bg-white/50 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus-visible:border-blue-400 focus-visible:ring-3 focus-visible:ring-blue-100 dark:border-gray-700 dark:bg-gray-800/50 dark:placeholder:text-gray-500 dark:focus-visible:border-blue-500 dark:focus-visible:ring-blue-900/30"
+                    :class="{ 'ring-3 ring-blue-100 dark:ring-blue-900/30 border-blue-400 dark:border-blue-500': passwordFocused }"
                     @focus="passwordFocused = true"
                     @blur="passwordFocused = false"
                 />
@@ -183,7 +183,7 @@ defineProps<{
         <!-- Submit Button -->
         <Button
             type="submit"
-            class="group relative h-11 w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-200/50 transition-all duration-300 hover:from-blue-700 hover:to-indigo-700 hover:shadow-blue-300/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 dark:shadow-indigo-900/30 dark:hover:shadow-indigo-800/30"
+            class="group relative h-10 w-full overflow-hidden rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-blue-200/50 transition-all duration-300 hover:from-blue-700 hover:to-indigo-700 hover:shadow-blue-300/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 dark:shadow-indigo-900/30 dark:hover:shadow-indigo-800/30"
             :tabindex="4"
             :disabled="processing"
             data-test="login-button"

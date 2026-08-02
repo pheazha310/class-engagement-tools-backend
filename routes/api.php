@@ -111,6 +111,7 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
 
     Route::get('teacher/dashboard-stats', [TeacherDashboardController::class, 'dashboardStats']);
     Route::get('teacher/recent-activities', [TeacherDashboardController::class, 'recentActivities']);
+    Route::get('teacher/activity-history', [TeacherDashboardController::class, 'activityHistory']);
     Route::get('teacher/top-quizzes', [TeacherDashboardController::class, 'topQuizzes']);
     Route::get('teacher/class-configurations', [TeacherDashboardController::class, 'classConfigurations']);
     Route::post('teacher/class-configurations', [TeacherDashboardController::class, 'storeClassConfiguration']);
